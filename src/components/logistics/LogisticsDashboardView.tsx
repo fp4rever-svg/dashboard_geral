@@ -5,6 +5,7 @@ import AnnouncementsView from '../views/AnnouncementsView';
 import { useLogisticsData } from '../../hooks/useLogisticsData';
 import { useProjectionData } from '../../hooks/useProjectionData';
 import { useAbsenteeismData } from '../../hooks/useAbsenteeismData';
+import { useWakeLock } from '../../hooks/useWakeLock';
 import { 
     Truck, 
     Package, 
@@ -102,6 +103,9 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     const [searchQuery, setSearchQuery] = useState('');
     const [isTVMode, setIsTVMode] = useState(false);
     const [tvView, setTvView] = useState<'logistics' | 'production' | 'health' | 'avisos'>(forcedView || 'logistics');
+    
+    // Enable wake lock when in TV mode
+    useWakeLock(isTVMode);
   
     // Synchronize with external TV mode signal
     useEffect(() => {
