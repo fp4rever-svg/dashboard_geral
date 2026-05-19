@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "LogisticsData": {
+      "title": "Logistics Data",
+      "description": "Data representing logistics routes and volumes.",
+      "type": "object",
+      "properties": {
+        "rotas": { "type": "string" },
+        "totalVolume": { "type": "number" },
+        "totalQtdRemessa": { "type": "number" },
+        "retVol": { "type": "string" },
+        "retUnid": { "type": "string" },
+        "horarios": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["rotas", "totalVolume", "totalQtdRemessa", "horarios"]
+    },
+    "AbsenteeismData": {
+      "title": "Absenteeism Data",
+      "description": "Data representing employee absences per sector.",
+      "type": "object",
+      "properties": {
+        "setor": { "type": "string" },
+        "faltas": { "type": "number" },
+        "total": { "type": "number" }
+      },
+      "required": ["setor", "faltas", "total"]
+    },
+    "ProductionAnalytics": {
+      "title": "Production Analytics",
+      "description": "Hourly production performance data.",
+      "type": "object",
+      "properties": {
+        "hora": { "type": "string" },
+        "cubagem": { "type": "string" },
+        "separaACS": { "type": "string" },
+        "separaUND": { "type": "string" },
+        "cFrac": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["hora", "cubagem", "separaACS", "separaUND", "cFrac"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Operational alerts and announcements.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "error", "success"] },
+        "timestamp": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "content", "type", "timestamp", "active"]
+    }
+  },
+  "firestore": {
+    "logistics": {
+      "schema": "LogisticsData",
+      "description": "Logistics data uploaded by users."
+    },
+    "absenteeism": {
+      "schema": "AbsenteeismData",
+      "description": "Absenteeism records for each sector."
+    },
+    "production_analytics": {
+      "schema": "ProductionAnalytics",
+      "description": "Hourly production performance records."
+    },
+    "announcements": {
+      "schema": "Announcement",
+      "description": "Operational announcements and alerts."
+    }
+  }
+}

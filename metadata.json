@@ -1,0 +1,6 @@
+{
+  "name": "Industrial Insights Dashboard",
+  "description": "A dashboard for real-time monitoring of industrial production performance and volume analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
