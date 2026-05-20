@@ -47,6 +47,12 @@ export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, hor
   const targetTime = new Date();
   targetTime.setHours(h, m || 0, s || 0, 0);
 
+  // Fix: If it's the shift start (after 22:00) and the route is in the early morning (before 10 AM), 
+  // it belongs to the next day, not the current day.
+  if (now.getHours() >= 22 && h < 10) {
+    targetTime.setDate(targetTime.getDate() + 1);
+  }
+
   // Monday rule: +1 hour
   if (isMonday) {
     targetTime.setHours(targetTime.getHours() + 1);
