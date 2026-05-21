@@ -360,7 +360,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="md:col-span-2 lg:col-span-4 lg:row-span-2 bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl shadow-slate-900/30"
+                            className="md:col-span-2 lg:col-span-6 lg:row-span-2 bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl shadow-slate-900/30"
                         >
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start">
@@ -404,71 +404,18 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             </div>
                         </motion.div>
 
-                        {/* 2. Volume Summary Block (2x1) */}
+                        {/* 5. Next Window Block - Increased prominence */}
                         <motion.div 
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="md:col-span-1 lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                            className="md:col-span-2 lg:col-span-6 bg-slate-900 rounded-3xl p-10 shadow-xl flex flex-col justify-center gap-2 hover:shadow-2xl transition-all duration-300"
                         >
-                            <div className="p-4 bg-blue-50 rounded-2xl text-blue-600 shadow-inner">
-                                <FileSpreadsheet className="w-7 h-7" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Carga Inicial</p>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">{totalDocsIniciais.toLocaleString()}</p>
-                            </div>
-                        </motion.div>
-
-                        {/* 3. Alerts Block (2x1) */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="md:col-span-1 lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                        >
-                            <div className="p-4 bg-orange-50 text-orange-600 rounded-2xl shadow-inner">
-                                <AlertCircle className="w-7 h-7" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Docs Atuais</p>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">{totalDocsAtuais.toLocaleString()}</p>
-                            </div>
-                        </motion.div>
-
-                        {/* 4. Units Summary Block (2x1) */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="md:col-span-1 lg:col-span-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                        >
-                            <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600 shadow-inner">
-                                <TrendingUp className="w-7 h-7" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Processados</p>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">{(totalDocsIniciais - totalDocsAtuais).toLocaleString()}</p>
-                            </div>
-                        </motion.div>
-
-                        {/* 5. Next Window Block (2x1) */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="md:col-span-1 lg:col-span-4 bg-slate-900 rounded-3xl p-6 shadow-xl flex items-center gap-5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group"
-                        >
-                            <div className="p-4 bg-blue-500 rounded-2xl text-white shadow-lg group-hover:scale-110 transition-transform">
-                                <Clock className="w-7 h-7" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Próxima Janela</p>
-                                <div className="flex items-baseline gap-2">
-                                    <p className="text-2xl font-black text-white">{nextRoute?.horarios.substring(0, 5) || '--:--'}</p>
-                                    <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md">Rota {nextRoute?.rotas || 'N/A'}</span>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Próxima Janela</p>
+                                <div className="flex items-baseline gap-4">
+                                    <p className="text-6xl font-black text-white">{nextRoute?.horarios.substring(0, 5) || '--:--'}</p>
+                                    <span className="text-sm font-black text-blue-400 bg-blue-500/10 px-4 py-1 rounded-lg">Rota {nextRoute?.rotas || 'N/A'}</span>
                                 </div>
-                            </div>
                         </motion.div>
 
                         {/* 6. Main Route Grid (Space filling) */}
@@ -484,7 +431,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.9, y: 10 }}
                                                 transition={{ delay: index * 0.01 }}
-                                                className={`bg-white p-5 rounded-2xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60' : 'border-slate-200'} hover:border-blue-400 transition-all hover:shadow-2xl group relative cursor-pointer active:scale-95`}
+                                                className={`bg-white p-5 rounded-2xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60 scale-75' : 'border-slate-200 shadow-sm'} hover:border-blue-400 transition-all hover:shadow-2xl group relative cursor-pointer active:scale-95`}
                                             >
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="space-y-0.5">
@@ -514,13 +461,8 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                          </div>
                                                      </div>
 
-                                                     {/* Processed Count */}
-                                                     <div className="flex justify-between items-end border-t border-slate-50 pt-2">
-                                                         <span className="text-[10px] font-black text-slate-400 uppercase">Processados</span>
-                                                         <span className="text-sm font-black text-emerald-600">{(row.docsIniciais - row.docsAtuais).toLocaleString()}</span>
-                                                     </div>
 
-                                                     {/* Progress Bar */}
+                                                 {/* Progress Bar */}
                                                      <div className="space-y-1.5">
                                                          <div className="flex justify-between items-end">
                                                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Conclusão</span>
