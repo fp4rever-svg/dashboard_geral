@@ -108,7 +108,11 @@ export default function App() {
     return val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const lastHourACS = [...data].reverse().find(item => parseValue(item.separaACS) > 0)?.separaACS || '0,00';
+  const now = new Date();
+  const prevHour = new Date(now.getTime() - 60 * 60 * 1000); // 1h ago
+  const prevHourStr = `${prevHour.getHours().toString().padStart(2, '0')}:00:00`;
+  const targetEntry = data.find(item => item.hora === prevHourStr);
+  const lastHourACS = targetEntry?.separaACS || '0,00';
 
   const chartData = data.map(item => ({
     name: item.hora?.substring(0, 5) || '',
