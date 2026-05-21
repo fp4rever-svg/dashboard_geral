@@ -1,4 +1,4 @@
-import { Factory, Truck, BarChart3, FileText, TableProperties, LineChart, Users, HeartPulse, LayoutDashboard, Megaphone } from 'lucide-react';
+import { Factory, Truck, BarChart3, FileText, TableProperties, LineChart, Users, HeartPulse, LayoutDashboard, Megaphone, ExternalLink } from 'lucide-react';
 
 interface SideNavBarProps {
   activeTab: string;
@@ -67,6 +67,13 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
             >
               <Users className="w-5 h-5" />
               <span className="text-sm font-bold">Absenteísmo</span>
+            </button>
+            <button 
+              onClick={() => window.open('https://lista-presenca2.onrender.com', '_blank')}
+              className="flex items-center gap-4 rounded-xl px-4 py-3 transition-all text-slate-500 hover:bg-slate-200"
+            >
+              <ExternalLink className="w-5 h-5" />
+              <span className="text-sm font-bold">Lista de Presença</span>
             </button>
             <button 
               onClick={() => onTabChange('analytics')}
