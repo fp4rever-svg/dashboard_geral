@@ -122,7 +122,20 @@ export default function App() {
   }));
 
   const getEffectiveLastUpdated = () => {
-    return manualUpdate;
+    switch (activeTab) {
+      case 'painel':
+        return analyticsUpdate || manualUpdate;
+      case 'log_analytics':
+        return logisticsUpdate || manualUpdate;
+      case 'absenteismo':
+        return absenteeismUpdate || manualUpdate;
+      case 'daily_projection':
+        return projectionUpdate || manualUpdate;
+      case 'avisos':
+        return announcementsUpdate || manualUpdate;
+      default:
+        return manualUpdate;
+    }
   };
 
   if (authLoading) {
