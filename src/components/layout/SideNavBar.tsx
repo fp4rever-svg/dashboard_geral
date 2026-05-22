@@ -10,23 +10,29 @@ interface SideNavBarProps {
   isAdmin: boolean;
 }
 
-const initialGestaoItems = [
-  { id: 'log_dashboard', label: 'Log. Tabela', icon: TableProperties },
-  { id: 'daily_projection', label: 'Projeção Diária', icon: LineChart },
-  { id: 'absenteismo', label: 'Absenteísmo', icon: Users },
-  { id: 'lista_presenca', label: 'Lista de Presença', icon: ExternalLink, type: 'external' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-];
+const GESTAO_ITEMS_CONFIG = {
+  log_dashboard: { label: 'Log. Tabela', icon: TableProperties },
+  daily_projection: { label: 'Projeção Diária', icon: LineChart },
+  absenteismo: { label: 'Absenteísmo', icon: Users },
+  lista_presenca: { label: 'Lista de Presença', icon: ExternalLink, type: 'external' },
+  analytics: { label: 'Analytics', icon: BarChart3 },
+};
 
-function SortableItem({ id, label, icon: Icon, activeTab, onTabChange, isExternal }: any) {
+const initialOrder = Object.keys(GESTAO_ITEMS_CONFIG);
+
+function SortableItem({ id, activeTab, onTabChange }: any) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const item = GESTAO_ITEMS_CONFIG[id as keyof typeof GESTAO_ITEMS_CONFIG];
+
+  if (!item) return null;
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const IconComponent = Icon;
+  const IconComponent = item.icon;
+  const isExternal = item.type === 'external';
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-2">
@@ -38,16 +44,26 @@ function SortableItem({ id, label, icon: Icon, activeTab, onTabChange, isExterna
         className={`flex-1 flex items-center gap-4 rounded-xl px-4 py-3 transition-all ${!isExternal && activeTab === id ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-200'}`}
       >
         <IconComponent className="w-5 h-5" />
-        <span className="text-sm font-bold">{label}</span>
+        <span className="text-sm font-bold">{item.label}</span>
       </button>
     </div>
   );
 }
 
 export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps) {
-  const [gestaoItems, setGestaoItems] = useState(() => {
+  const [gestaoOrder, setGestaoOrder] = useState(() => {
     const saved = localStorage.getItem('gestaoOrder');
-    return saved ? JSON.parse(saved) : initialGestaoItems;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to parse gestaoOrder, resetting.", e);
+      }
+    }
+    return initialOrder;
   });
 
   const sensors = useSensors(
@@ -56,15 +72,15 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
   );
 
   useEffect(() => {
-    localStorage.setItem('gestaoOrder', JSON.stringify(gestaoItems));
-  }, [gestaoItems]);
+    localStorage.setItem('gestaoOrder', JSON.stringify(gestaoOrder));
+  }, [gestaoOrder]);
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (active.id !== over.id) {
-      setGestaoItems((items: any) => {
-        const oldIndex = items.findIndex((i: any) => i.id === active.id);
-        const newIndex = items.findIndex((i: any) => i.id === over.id);
+      setGestaoOrder((items: any) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
@@ -111,9 +127,9 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
           <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Gestão</h2>
           <nav className="flex flex-col gap-2">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={gestaoItems.map((i: any) => i.id)} strategy={verticalListSortingStrategy}>
-                {gestaoItems.map((item: any) => (
-                  <SortableItem key={item.id} id={item.id} label={item.label} icon={item.icon} activeTab={activeTab} onTabChange={onTabChange} isExternal={item.type === 'external'} />
+              <SortableContext items={gestaoOrder} strategy={verticalListSortingStrategy}>
+                {gestaoOrder.map((id: string) => (
+                  <SortableItem key={id} id={id} activeTab={activeTab} onTabChange={onTabChange} />
                 ))}
               </SortableContext>
             </DndContext>
