@@ -228,7 +228,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
           <tr>
             <th className="p-3 border">Rotas</th>
             <th className="p-3 border">Qtd Inicial Docs</th>
-            <th className="p-3 border">Qtd Docs Atual</th>
+            <th className="p-3 border">Qtd Docs Faltantes</th>
             <th className="p-3 border">% Conclusão</th>
             <th className="p-3 border">Horários</th>
             <th className="p-3 border">Status</th>

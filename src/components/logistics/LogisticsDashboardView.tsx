@@ -471,7 +471,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                          </div>
                                                          <div className="w-px h-6 bg-slate-200"></div>
                                                          <div className="text-center flex-1">
-                                                             <p className="text-[8px] font-black text-slate-400 uppercase">Atual</p>
+                                                             <p className="text-[8px] font-black text-slate-400 uppercase">FALTANTES</p>
                                                              <p className="text-xs font-black text-blue-600">{row.docsAtuais}</p>
                                                          </div>
                                                      </div>
