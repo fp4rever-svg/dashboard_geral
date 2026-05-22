@@ -10,7 +10,7 @@ interface SideNavBarProps {
   isAdmin: boolean;
 }
 
-const GESTAO_ITEMS_CONFIG = {
+const GESTAO_ITEMS_CONFIG: Record<string, { label: string; icon: any, type?: string }> = {
   log_dashboard: { label: 'Log. Tabela', icon: TableProperties },
   daily_projection: { label: 'Projeção Diária', icon: LineChart },
   absenteismo: { label: 'Absenteísmo', icon: Users },

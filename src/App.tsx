@@ -51,6 +51,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
   const [isGenericAdmin, setIsGenericAdmin] = useState(() => localStorage.getItem('isGenericAdmin') === 'true');
+  const [selectedRoute, setSelectedRoute] = useState<string>('');
 
   const ADMIN_EMAIL = 'fp4rever@gmail.com';
 
@@ -237,7 +238,7 @@ export default function App() {
             )}
 
             {activeTab === 'log_dashboard' && isAdmin && (
-              <LogisticsTable isAdmin={isAdmin} />
+              <LogisticsTable isAdmin={isAdmin} selectedRoute={selectedRoute} onRouteSelect={setSelectedRoute} />
             )}
 
             {activeTab === 'daily_projection' && isAdmin && (
@@ -258,6 +259,7 @@ export default function App() {
                    chartData,
                    formatValue
                  }}
+                 selectedRoute={selectedRoute}
                />
             )}
 
@@ -275,6 +277,7 @@ export default function App() {
                   chartData,
                   formatValue
                 }}
+                selectedRoute={selectedRoute}
               />
             )}
             

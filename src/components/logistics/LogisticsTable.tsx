@@ -33,7 +33,7 @@ const statusColors: Record<string, string> = {
   'Atrasado': 'bg-red-100 text-red-800',
 };
 
-export function LogisticsTable({ isAdmin = false }: { isAdmin?: boolean }) {
+export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }: { isAdmin?: boolean; selectedRoute: string; onRouteSelect: (route: string) => void }) {
   const { rows: initialRows, loading } = useLogisticsData();
   const [rows, setRows] = useState<LogisticsRow[]>([]);
   const [importing, setImporting] = useState(false);
@@ -46,6 +46,10 @@ export function LogisticsTable({ isAdmin = false }: { isAdmin?: boolean }) {
     }
   }, [initialRows]);
 
+  const handleRouteSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onRouteSelect(e.target.value);
+  };
+ 
   const handleInputChange = (rotas: string, field: 'docsIniciais' | 'docsAtuais', value: string) => {
       if (!isAdmin) return;
       const numericValue = parseInt(value) || 0;
@@ -179,6 +183,13 @@ export function LogisticsTable({ isAdmin = false }: { isAdmin?: boolean }) {
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-bold text-slate-900">Fluxo de Documentos</h2>
+            <input
+                type="text"
+                placeholder="Filtrar por Rota..."
+                value={selectedRoute}
+                onChange={handleRouteSearch}
+                className="ml-4 p-2 border border-slate-300 rounded-lg text-sm"
+            />
           </div>
           
           {isAdmin && (
@@ -224,7 +235,7 @@ export function LogisticsTable({ isAdmin = false }: { isAdmin?: boolean }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(row => {
+          {rows.filter(r => r.rotas.includes(selectedRoute)).map(row => {
             const diff = Math.max(0, row.docsIniciais - row.docsAtuais);
             const percentage = row.docsIniciais > 0 ? ((diff / row.docsIniciais) * 100).toFixed(0) + '%' : '0%';
             

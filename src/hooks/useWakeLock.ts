@@ -16,12 +16,18 @@ export function useWakeLock(enabled: boolean) {
     const requestWakeLock = async () => {
       try {
         if ('wakeLock' in navigator) {
+          // Check if document is visible before requesting
+          if (document.hidden) return;
+          
           wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-        } else {
-          console.warn('Wake Lock API not supported');
+          
+          wakeLockRef.current.addEventListener('release', () => {
+            console.log('Wake Lock released');
+            wakeLockRef.current = null;
+          });
         }
       } catch (err) {
-        console.error('Failed to request Wake Lock', err);
+        console.warn('Failed to request Wake Lock', err);
       }
     };
 

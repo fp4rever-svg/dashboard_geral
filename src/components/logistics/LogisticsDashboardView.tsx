@@ -20,7 +20,9 @@ import {
     RefreshCw,
     Maximize2,
     Minimize2,
-    Users
+    Users,
+    Play,
+    Pause
 } from 'lucide-react';
 
 interface LogisticsRow {
@@ -88,6 +90,7 @@ interface LogisticsDashboardViewProps {
     chartData: any[];
     formatValue: (val: number) => string;
   };
+  selectedRoute?: string;
 }
 
 interface ProjectionData {
@@ -96,12 +99,13 @@ interface ProjectionData {
   upmEticos: { meta: number; valor: number; cenarioAtual: number; limite: number };
 }
 
-export function LogisticsDashboardView({ productionData, forcedView, externalTVMode }: LogisticsDashboardViewProps) {
+export function LogisticsDashboardView({ productionData, forcedView, externalTVMode, selectedRoute = '' }: LogisticsDashboardViewProps) {
     const { rows, loading: loadingLogistics } = useLogisticsData();
     const { data: projection, loading: loadingProjection } = useProjectionData();
     const { totals: absenteeismTotals } = useAbsenteeismData();
     const [searchQuery, setSearchQuery] = useState('');
     const [isTVMode, setIsTVMode] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const [tvView, setTvView] = useState<'logistics' | 'production' | 'health' | 'avisos'>(forcedView || 'logistics');
     
     // Enable wake lock when in TV mode
@@ -123,7 +127,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
 
     // TV Mode Rotation Effect
     useEffect(() => {
-        if (!isTVMode) return;
+        if (!isTVMode || isPaused) return;
 
         const interval = setInterval(() => {
             setTvView(current => {
@@ -135,12 +139,14 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
         }, 10000); // 10 seconds per view
 
         return () => clearInterval(interval);
-    }, [isTVMode]);
+    }, [isTVMode, isPaused]);
 
     const loading = loadingLogistics || loadingProjection;
+    
+    const effectiveSearchQuery = selectedRoute || searchQuery;
 
     const filteredRows = rows
-        .filter(row => row.rotas.includes(searchQuery))
+        .filter(row => row.rotas.includes(effectiveSearchQuery))
         .sort((a, b) => {
             if (a.status === 'Finalizado' && b.status !== 'Finalizado') return 1;
             if (a.status !== 'Finalizado' && b.status === 'Finalizado') return -1;
@@ -229,6 +235,15 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                     />
                 </div>
                 <div className="flex items-center gap-2">
+                    {isTVMode && (
+                        <button 
+                            onClick={() => setIsPaused(!isPaused)}
+                            className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors"
+                            title={isPaused ? "Resumir transições" : "Pausar transições"}
+                        >
+                            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                        </button>
+                    )}
                     <button 
                         onClick={() => setIsTVMode(!isTVMode)}
                         className="p-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
