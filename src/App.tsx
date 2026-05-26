@@ -43,7 +43,7 @@ export default function App() {
   const { lastUpdated: logisticsUpdate } = useLogisticsData();
   const { lastUpdated: projectionUpdate } = useProjectionData();
   const { lastUpdated: absenteeismUpdate } = useAbsenteeismData();
-  const { lastUpdated: manualUpdate, updateLastUpdated } = useAppMetadata();
+  const { lastUpdated: manualUpdate, updateLastUpdated, lastUploadAt } = useAppMetadata();
   
   const [activeTab, setActiveTab] = useState('log_analytics');
   const [isMaximized, setIsMaximized] = useState(false);
@@ -127,7 +127,7 @@ export default function App() {
       case 'painel':
         return analyticsUpdate || manualUpdate;
       case 'log_analytics':
-        return logisticsUpdate || manualUpdate;
+        return lastUploadAt || logisticsUpdate || manualUpdate;
       case 'absenteismo':
         return absenteeismUpdate || manualUpdate;
       case 'daily_projection':

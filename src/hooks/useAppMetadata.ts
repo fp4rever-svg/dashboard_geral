@@ -5,6 +5,7 @@ import { handleFirestoreError, OperationType } from '../lib/utils';
 
 export function useAppMetadata() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUploadAt, setLastUploadAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,6 +15,9 @@ export function useAppMetadata() {
         const data = docSnap.data();
         if (data.lastUpdated) {
           setLastUpdated(data.lastUpdated.toDate());
+        }
+        if (data.lastUploadAt) {
+          setLastUploadAt(data.lastUploadAt.toDate());
         }
       }
       setLoading(false);
@@ -42,5 +46,23 @@ export function useAppMetadata() {
     }
   };
 
-  return { lastUpdated, updateLastUpdated, loading };
+  const updateLastUploadAt = async (date: Date) => {
+    const docRef = doc(db, 'config', 'metadata');
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        await updateDoc(docRef, {
+          lastUploadAt: Timestamp.fromDate(date)
+        });
+      } else {
+        await setDoc(docRef, {
+          lastUploadAt: Timestamp.fromDate(date)
+        });
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'config/metadata');
+    }
+  };
+
+  return { lastUpdated, updateLastUpdated, lastUploadAt, updateLastUploadAt, loading };
 }

@@ -4,6 +4,7 @@ import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/utils';
 import { Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { useLogisticsData, LogisticsRow } from '../../hooks/useLogisticsData';
+import { useAppMetadata } from '../../hooks/useAppMetadata';
 
 const FIXED_DATA = [
   { rotas: '731', horarios: '01:00:00' },
@@ -35,6 +36,7 @@ const statusColors: Record<string, string> = {
 
 export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }: { isAdmin?: boolean; selectedRoute: string; onRouteSelect: (route: string) => void }) {
   const { rows: initialRows, loading } = useLogisticsData();
+  const { updateLastUploadAt } = useAppMetadata();
   const [rows, setRows] = useState<LogisticsRow[]>([]);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +139,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
 
         if (updatedCount > 0) {
           await batch.commit();
+          await updateLastUploadAt(new Date());
           alert(`Sucesso! ${updatedCount} rotas atualizadas.${skippedCount > 0 ? ` (${skippedCount} linhas ignoradas)` : ''}`);
         } else {
           alert('Nenhuma rota válida encontrada no arquivo. Verifique se o formato é: Rota, Qtd Inicial, Qtd Atual');
