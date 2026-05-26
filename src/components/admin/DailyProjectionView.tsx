@@ -24,6 +24,7 @@ export function DailyProjectionView() {
   const { data: initialData, loading } = useProjectionData();
   const [data, setData] = useState<ProjectionData>(initialData);
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('pt-BR'));
 
   // Live Clock Effect
@@ -82,7 +83,8 @@ export function DailyProjectionView() {
         previsaoHora: calcPrevisao.toString()
       };
       await setDoc(doc(db, 'config', 'daily_projection'), dataToSave);
-      alert('Alterações salvas com sucesso!');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, 'config/daily_projection');
     } finally {
@@ -156,11 +158,19 @@ export function DailyProjectionView() {
         </div>
         <button 
           onClick={saveToFirebase}
-          disabled={saving}
-          className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+          disabled={saving || showSuccess}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${
+            showSuccess ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20 disabled:opacity-50'
+          }`}
         >
-          {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-          Salvar Alterações
+          {saving ? (
+             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : showSuccess ? (
+             <CheckCircle2 className="w-4 h-4" />
+          ) : (
+             <Save className="w-4 h-4" />
+          )}
+          {saving ? 'Salvando...' : showSuccess ? 'Salvo!' : 'Salvar Alterações'}
         </button>
       </div>
 
