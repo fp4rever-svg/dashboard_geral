@@ -100,7 +100,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     const { totals: absenteeismTotals } = useAbsenteeismData();
     const tickerMessages = productionData ? [
         `Ritmo de Produção: ${productionData.totals.totalSeparaACS} ACS separados | ${productionData.totals.totalSeparaUND} UND separados.`,
-        `Performance: ${productionData.totals.totalSeparaACS >= projection.volumeDiario.meta ? 'Operação Dentro da Meta' : 'Atenção: Operação Abaixo da Meta'}`,
+        `Performance: ${productionData.totals.averageSeparaACS >= projection.volumeDiario.meta ? 'Operação Dentro da Meta' : 'Atenção: Operação Abaixo da Meta'}`,
         `Último Registro Acessos: ${productionData.lastHourACS} ACS na última hora.`,
         `Risco Rota Gargalo: ${rows.filter(r => r.status === 'Atrasado').length > 0 ? `Rota ${rows.filter(r => r.status === 'Atrasado')[0].rotas} em atraso` : 'Nenhum risco identificado'}`,
         `Faltas na Operação: ${absenteeismTotals.faltas} colaboradores ausentes.`

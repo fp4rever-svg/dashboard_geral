@@ -105,6 +105,11 @@ export default function App() {
     return acc;
   }, { totalCubagem: 0, totalSeparaACS: 0, totalSeparaUND: 0, totalCFracUND: 0 });
 
+  const totalsWithAvg = {
+      ...totals,
+      averageSeparaACS: data.length > 0 ? totals.totalSeparaACS / data.length : 0
+  };
+
   const formatValue = (val: number) => {
     return val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
@@ -221,7 +226,7 @@ export default function App() {
             
             {activeTab === 'painel' && (
               <ProductionDashboardView 
-                totals={totals}
+                totals={totalsWithAvg}
                 lastHourACS={lastHourACS}
                 chartData={chartData}
                 formatValue={formatValue}
@@ -254,7 +259,7 @@ export default function App() {
                  forcedView="health"
                  externalTVMode={isMaximized}
                  productionData={{
-                   totals,
+                   totals: totalsWithAvg,
                    lastHourACS,
                    chartData,
                    formatValue
@@ -272,7 +277,7 @@ export default function App() {
                 forcedView="logistics"
                 externalTVMode={isMaximized}
                 productionData={{
-                  totals,
+                  totals: totalsWithAvg,
                   lastHourACS,
                   chartData,
                   formatValue
