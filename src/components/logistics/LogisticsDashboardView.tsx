@@ -98,11 +98,44 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     const { rows, loading: loadingLogistics } = useLogisticsData();
     const { data: projection, loading: loadingProjection } = useProjectionData();
     const { totals: absenteeismTotals } = useAbsenteeismData();
+
+    // Persistent storage for delayed routes
+    const [persistentDelayedRoutes, setPersistentDelayedRoutes] = useState<Set<string>>(() => {
+        const stored = localStorage.getItem('delayedRoutes');
+        if (stored) {
+            try {
+                const { date, routes } = JSON.parse(stored);
+                if (date === new Date().toISOString().split('T')[0]) {
+                    return new Set(routes);
+                }
+            } catch (e) {
+                return new Set();
+            }
+        }
+        return new Set();
+    });
+
+    useEffect(() => {
+        const delayed = rows.filter(r => r.status === 'Atrasado').map(r => r.rotas);
+        const finalized = rows.filter(r => r.status === 'Finalizado').map(r => r.rotas);
+        
+        setPersistentDelayedRoutes(prev => {
+            const next = new Set([...Array.from(prev), ...delayed]);
+            finalized.forEach(r => next.delete(r));
+            
+            localStorage.setItem('delayedRoutes', JSON.stringify({
+                date: new Date().toISOString().split('T')[0],
+                routes: Array.from(next)
+            }));
+            return next;
+        });
+    }, [rows]);
+
     const tickerMessages = productionData ? [
         `Ritmo de Produção: ${productionData.totals.totalSeparaACS} ACS separados | ${productionData.totals.totalSeparaUND} UND separados.`,
         `Performance: ${productionData.totals.averageSeparaACS >= projection.volumeDiario.meta ? 'Operação Dentro da Meta' : 'Atenção: Operação Abaixo da Meta'}`,
         `Último Registro Acessos: ${productionData.lastHourACS} ACS na última hora.`,
-        `Risco Rota Gargalo: ${rows.filter(r => r.status === 'Atrasado').length > 0 ? `Rota ${rows.filter(r => r.status === 'Atrasado')[0].rotas} em atraso` : 'Nenhum risco identificado'}`,
+        `Risco Rota Gargalo: ${persistentDelayedRoutes.size > 0 ? `Rotas ${Array.from(persistentDelayedRoutes).join(', ')} em atraso hoje` : 'Nenhum risco identificado'}`,
         `Faltas na Operação: ${absenteeismTotals.faltas} colaboradores ausentes.`
     ] : [];
     

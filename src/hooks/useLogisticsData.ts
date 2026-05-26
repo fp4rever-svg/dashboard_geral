@@ -32,6 +32,24 @@ const FIXED_DATA = [
   { rotas: '727', horarios: '08:00:00' },
 ];
 
+export function isShiftActive() {
+  const now = new Date();
+  const day = now.getDay();
+  const hour = now.getHours();
+
+  // Shift is active if:
+  // Monday >= 22:00 OR Tuesday < 07:00
+  return (day === 1 && hour >= 22) || (day === 2 && hour < 7);
+}
+
+export function adjustHorarioForShift(horarioStr: string) {
+  if (!isShiftActive()) return horarioStr;
+  
+  const [h, m, s] = horarioStr.split(':').map(Number);
+  const newH = (h + 1) % 24;
+  return `${String(newH).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, horarioStr: string) {
   if (!horarioStr) return 'Pendente';
   
@@ -41,8 +59,7 @@ export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, hor
   }
 
   const now = new Date();
-  const isMonday = now.getDay() === 1;
-
+  
   const [h, m, s] = horarioStr.split(':').map(Number);
   const targetTime = new Date();
   targetTime.setHours(h, m || 0, s || 0, 0);
@@ -53,8 +70,8 @@ export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, hor
     targetTime.setDate(targetTime.getDate() + 1);
   }
 
-  // Monday rule: +1 hour
-  if (isMonday) {
+  // Shift rule: +1 hour
+  if (isShiftActive()) {
     targetTime.setHours(targetTime.getHours() + 1);
   }
 
@@ -95,13 +112,15 @@ export function useLogisticsData() {
         const custom = customData[row.rotas] || {};
         const docsIniciais = custom.docsIniciais ?? row.docsIniciais;
         const docsAtuais = custom.docsAtuais ?? row.docsAtuais;
+        const originalRow = FIXED_DATA.find(fr => fr.rotas === row.rotas);
+        const originalHorarios = originalRow ? originalRow.horarios : row.horarios;
         
         return {
           ...row,
           docsIniciais,
           docsAtuais,
-          // Status is now computed automatically
-          status: getAutomaticStatus(docsIniciais, docsAtuais, row.horarios)
+          horarios: adjustHorarioForShift(originalHorarios),
+          status: getAutomaticStatus(docsIniciais, docsAtuais, originalHorarios)
         } as LogisticsRow;
       }));
       setLoading(false);
