@@ -154,6 +154,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
         });
     const totalDocsIniciais = rows.reduce((acc, row) => acc + row.docsIniciais, 0);
     const totalDocsAtuais = rows.reduce((acc, row) => acc + row.docsAtuais, 0);
+    const totalFaltantes = filteredRows.reduce((acc, row) => acc + row.docsAtuais, 0);
     const globalCompletion = getCompletionInfo(totalDocsIniciais, totalDocsAtuais);
     
     // Find next route (first not finished)
@@ -430,6 +431,20 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                 <div className="flex items-baseline gap-4">
                                     <p className="text-6xl font-black text-white">{nextRoute?.horarios.substring(0, 5) || '--:--'}</p>
                                     <span className="text-sm font-black text-blue-400 bg-blue-500/10 px-4 py-1 rounded-lg">Rota {nextRoute?.rotas || 'N/A'}</span>
+                                </div>
+                        </motion.div>
+
+                        {/* 6. Total Faltantes Block */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="md:col-span-2 lg:col-span-6 bg-white rounded-3xl p-10 shadow-lg border border-slate-100 flex flex-col justify-center gap-2 hover:shadow-xl transition-all duration-300"
+                        >
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Faltantes</p>
+                                <div className="flex items-baseline gap-4">
+                                    <p className="text-6xl font-black text-blue-600">{totalFaltantes.toLocaleString()}</p>
+                                    <span className="text-sm font-black text-slate-600">Caixas Faltantes</span>
                                 </div>
                         </motion.div>
 
