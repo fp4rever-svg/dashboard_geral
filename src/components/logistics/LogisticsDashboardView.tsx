@@ -157,6 +157,10 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     const totalFaltantes = filteredRows.reduce((acc, row) => acc + row.docsAtuais, 0);
     const globalCompletion = getCompletionInfo(totalDocsIniciais, totalDocsAtuais);
     
+    const filteredDocsIniciais = filteredRows.reduce((acc, row) => acc + row.docsIniciais, 0);
+    const filteredDocsAtuais = filteredRows.reduce((acc, row) => acc + row.docsAtuais, 0);
+    const filteredCompletion = getCompletionInfo(filteredDocsIniciais, filteredDocsAtuais);
+    
     // Find next route (first not finished)
     const nextRoute = rows.find(row => row.status !== 'Finalizado');
   
@@ -383,13 +387,13 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                     <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
                                         <Activity className="w-6 h-6 text-blue-400" />
                                     </div>
-                                    <span className="text-[10px] font-black px-3 py-1 bg-white/10 rounded-full uppercase tracking-[0.2em] backdrop-blur-md border border-white/10">Live Flow</span>
+                                    <span className="text-[10px] font-black px-3 py-1 bg-white/10 rounded-full uppercase tracking-[0.2em] backdrop-blur-md border border-white/10">CONCLUIDOS</span>
                                 </div>
                                 <div className="mt-8">
                                     <div className="flex items-baseline gap-2">
-                                        <h3 className="text-6xl font-black tracking-tighter text-blue-400">{globalCompletion.display.replace('%', '')}<span className="text-2xl text-white/40">%</span></h3>
+                                        <h3 className="text-6xl font-black tracking-tighter text-blue-400">{filteredCompletion.display.replace('%', '')}<span className="text-2xl text-white/40">%</span></h3>
                                     </div>
-                                    <p className="text-slate-400 text-sm font-bold mt-2 uppercase tracking-widest">Conclusão Global</p>
+                                    <p className="text-slate-400 text-sm font-bold mt-2 uppercase tracking-widest">Conclusão</p>
                                 </div>
                             </div>
 
@@ -397,17 +401,17 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <p className="text-[9px] font-black text-slate-500 uppercase">Processados</p>
-                                        <p className="text-xl font-black text-white">{(totalDocsIniciais - totalDocsAtuais).toLocaleString()}</p>
+                                        <p className="text-xl font-black text-white">{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()}</p>
                                     </div>
                                     <div className="space-y-1 text-right">
                                         <p className="text-[9px] font-black text-slate-500 uppercase">Pendentes</p>
-                                        <p className="text-xl font-black text-white">{totalDocsAtuais.toLocaleString()}</p>
+                                        <p className="text-xl font-black text-white">{filteredDocsAtuais.toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
                                     <motion.div 
                                         initial={{ width: 0 }}
-                                        animate={{ width: globalCompletion.display }}
+                                        animate={{ width: filteredCompletion.display }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
                                         className="bg-gradient-to-r from-blue-600 to-blue-400 h-full rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)]"
                                     ></motion.div>
