@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface PerformanceTableProps {
   rows: any[];
@@ -120,8 +121,16 @@ export function PerformanceTable({ rows, onFileUpload, onRowUpdate }: Performanc
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            <AnimatePresence>
             {rows.map((row, i) => (
-              <tr key={i} className="hover:bg-slate-50 text-sm">
+              <motion.tr 
+                key={row.id || i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, delay: i * 0.05 }}
+                className="hover:bg-slate-50 text-sm"
+              >
                 <td className="px-6 py-4 font-semibold text-slate-900">{row.hora}</td>
                 <td className="px-6 py-4 text-slate-600">{row.cubagem}</td>
                 <td 
@@ -159,8 +168,9 @@ export function PerformanceTable({ rows, onFileUpload, onRowUpdate }: Performanc
                 </td>
                 <td className="px-6 py-4 text-slate-600">{row.separaUND}</td>
                 <td className="px-6 py-4 text-slate-600">{row.cFrac}</td>
-              </tr>
+              </motion.tr>
             ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>

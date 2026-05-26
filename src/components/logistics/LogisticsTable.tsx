@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { doc, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/utils';
-import { Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, AlertTriangle, X } from 'lucide-react';
 import { useLogisticsData, LogisticsRow } from '../../hooks/useLogisticsData';
 import { useAppMetadata } from '../../hooks/useAppMetadata';
+import { motion, AnimatePresence } from 'motion/react';
 
 const FIXED_DATA = [
   { rotas: '731', horarios: '01:00:00' },
@@ -40,10 +41,19 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
   const [rows, setRows] = useState<LogisticsRow[]>([]);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [toast, setToast] = useState<{ id: number, message: string } | null>(null);
 
   // Sync rows from hook when they change, but allow local edits before saving
   React.useEffect(() => {
     if (initialRows.length > 0) {
+      // Check for status changes to 'Atrasado'
+      initialRows.forEach(newRow => {
+        const oldRow = rows.find(r => r.rotas === newRow.rotas);
+        if (oldRow && oldRow.status !== 'Atrasado' && newRow.status === 'Atrasado') {
+          setToast({ id: Date.now(), message: `Rota ${newRow.rotas} está atrasada!` });
+          setTimeout(() => setToast(null), 5000);
+        }
+      });
       setRows(initialRows);
     }
   }, [initialRows]);
@@ -179,6 +189,13 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
 
   return (
     <div className="space-y-8">
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 bg-red-600 text-white p-4 rounded-xl shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+            <AlertTriangle className="w-5 h-5" />
+            <p className="font-bold">{toast.message}</p>
+            <button onClick={() => setToast(null)}><X className="w-4 h-4" /></button>
+        </div>
+      )}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
@@ -238,12 +255,19 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
           </tr>
         </thead>
         <tbody>
-          {rows.filter(r => r.rotas.includes(selectedRoute)).map(row => {
+          <AnimatePresence>
+          {rows.filter(r => r.rotas.includes(selectedRoute)).map((row, i) => {
             const diff = Math.max(0, row.docsIniciais - row.docsAtuais);
             const percentage = row.docsIniciais > 0 ? ((diff / row.docsIniciais) * 100).toFixed(0) + '%' : '0%';
             
             return (
-              <tr key={row.rotas}>
+              <motion.tr 
+                key={row.rotas}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, delay: i * 0.05 }}
+              >
                 <td className="p-3 border font-medium">{row.rotas}</td>
                 <td className="p-3 border">
                    <input type="number" 
@@ -270,9 +294,10 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
                     {row.status}
                   </span>
                 </td>
-              </tr>
+              </motion.tr>
             );
           })}
+          </AnimatePresence>
           <tr className="bg-slate-200 font-bold">
             <td className="p-3 border">Total</td>
             <td className="p-3 border">{rows.reduce((acc, row) => acc + (row.docsIniciais || 0), 0)}</td>

@@ -77,11 +77,12 @@ export function DailyProjectionView() {
         volumeDiario: {
           ...data.volumeDiario,
           limite: calcLimiteVolumeDiario,
-          cenarioAtual: calcPrevisaoHora // Using this for historical context if needed, or keeping it as string
+          cenarioAtual: calcPrevisao.toString()
         },
-        previsaoHora: calcPrevisaoHora
+        previsaoHora: calcPrevisao.toString()
       };
       await setDoc(doc(db, 'config', 'daily_projection'), dataToSave);
+      alert('Alterações salvas com sucesso!');
     } catch (e) {
       handleFirestoreError(e, OperationType.WRITE, 'config/daily_projection');
     } finally {
@@ -138,15 +139,13 @@ export function DailyProjectionView() {
   // Volume Diário Calculations
   const calcLimiteVolumeDiario = data.otsPadrao > 0 ? Math.round(data.otsPadrao / 7) : 0;
   
-  const getPrevisaoHoraFormatted = () => {
-    if (data.otsPadrao <= 0) return '#DIV/0!';
-    const decimalHours = data.volumeDiario.valor / data.otsPadrao;
-    const hours = Math.floor(decimalHours);
-    const minutes = Math.round((decimalHours - hours) * 60);
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  const getPrevisaoValor = () => {
+    const now = new Date();
+    const currentMinutes = now.getMinutes() || 1;
+    return Math.round((data.volumeDiario.valor / currentMinutes) * 60);
   };
 
-  const calcPrevisaoHora = getPrevisaoHoraFormatted();
+  const calcPrevisao = getPrevisaoValor();
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -270,9 +269,9 @@ export function DailyProjectionView() {
           </div>
 
           <div className="bg-slate-900 p-6 rounded-3xl">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Previsão Hora</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Projeção</label>
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-xl font-black text-blue-400">
-                {calcPrevisaoHora}
+                {calcPrevisao.toLocaleString('pt-BR')}
               </div>
           </div>
 
