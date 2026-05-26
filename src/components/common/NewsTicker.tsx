@@ -15,7 +15,7 @@ export function NewsTicker({ messages }: NewsTickerProps) {
         <motion.div
           className="absolute whitespace-nowrap flex gap-12"
           animate={{ x: ['100%', '-100%'] }}
-          transition={{ duration: 30, ease: 'linear', repeat: Infinity }}
+          transition={{ duration: 80, ease: 'linear', repeat: Infinity }}
         >
           {messages.map((message, i) => (
             <span key={i} className="text-sm font-medium">
