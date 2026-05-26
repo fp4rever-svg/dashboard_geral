@@ -319,6 +319,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             value={projection.cancelamentoComercial.cenarioAtual} 
                             meta={projection.cancelamentoComercial.meta}
                             isQuebra={parseBrValue(projection.cancelamentoComercial.cenarioAtual) > parseBrValue(projection.cancelamentoComercial.meta)}
+                            isAtencao={! (parseBrValue(projection.cancelamentoComercial.cenarioAtual) > parseBrValue(projection.cancelamentoComercial.meta)) && parseBrValue(projection.cancelamentoComercial.cenarioAtual) > (parseBrValue(projection.cancelamentoComercial.meta) - 0.02)}
                             isLarge={tvView === 'health'}
                         />
                         <HealthCard 
@@ -326,6 +327,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             value={projection.cancelamentoOperacional.cenarioAtual} 
                             meta={projection.cancelamentoOperacional.meta}
                             isQuebra={parseBrValue(projection.cancelamentoOperacional.cenarioAtual) > parseBrValue(projection.cancelamentoOperacional.meta)}
+                            isAtencao={! (parseBrValue(projection.cancelamentoOperacional.cenarioAtual) > parseBrValue(projection.cancelamentoOperacional.meta)) && parseBrValue(projection.cancelamentoOperacional.cenarioAtual) > (parseBrValue(projection.cancelamentoOperacional.meta) - 0.02)}
                             isLarge={tvView === 'health'}
                         />
                         <HealthCard 
@@ -333,6 +335,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             value={projection.upmEticos.cenarioAtual.toString()} 
                             meta={projection.upmEticos.meta.toString()}
                             isQuebra={projection.upmEticos.cenarioAtual > projection.upmEticos.meta}
+                            isAtencao={! (projection.upmEticos.cenarioAtual > projection.upmEticos.meta) && projection.upmEticos.cenarioAtual > (projection.upmEticos.meta * (1 - 0.0002))}
                             isLarge={tvView === 'health'}
                         />
                         
@@ -580,51 +583,54 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
 
 }
 
-function HealthCard({ label, value, meta, isQuebra, isLarge }: { label: string; value: string; meta: string; isQuebra: boolean; isLarge?: boolean }) {
+function HealthCard({ label, value, meta, isQuebra, isAtencao, isLarge }: { label: string; value: string; meta: string; isQuebra: boolean; isAtencao: boolean; isLarge?: boolean }) {
     return (
         <div className={`rounded-[2rem] border shadow-sm transition-all flex flex-col justify-between ${
             isQuebra 
                 ? 'bg-red-50 border-red-100 shadow-red-100/20' 
-                : 'bg-white border-slate-100 shadow-slate-100/20'
+                : isAtencao
+                    ? 'bg-yellow-50 border-yellow-200 shadow-yellow-100/20'
+                    : 'bg-white border-slate-100 shadow-slate-100/20'
         } ${isLarge ? 'p-10 min-h-[280px]' : 'p-6'}`}>
             <div>
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex flex-col gap-1">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isQuebra ? 'text-red-400' : 'text-slate-400'}`}>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isQuebra ? 'text-red-400' : isAtencao ? 'text-yellow-600' : 'text-slate-400'}`}>
                             {label}
                         </span>
                         {isLarge && <div className="h-1 w-12 bg-slate-200 rounded-full"></div>}
                     </div>
                     <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        isQuebra ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
+                        isQuebra ? 'bg-red-100 text-red-600' : isAtencao ? 'bg-yellow-100 text-yellow-600' : 'bg-emerald-100 text-emerald-600'
                     }`}>
-                        {isQuebra ? 'Alerta Crítico' : 'Operação Normal'}
+                        {isQuebra ? 'Alerta Crítico' : isAtencao ? 'Atenção' : 'Operação Normal'}
                     </div>
                 </div>
                 <div className="flex items-baseline gap-3">
-                    <h4 className={`font-black tracking-tighter leading-none ${isQuebra ? 'text-red-600' : 'text-slate-900'} ${isLarge ? 'text-7xl' : 'text-3xl'}`}>
+                    <h4 className={`font-black tracking-tighter leading-none ${isQuebra ? 'text-red-600' : isAtencao ? 'text-yellow-600' : 'text-slate-900'} ${isLarge ? 'text-7xl' : 'text-3xl'}`}>
                         {value}
                     </h4>
                     <div className="flex flex-col">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isQuebra ? 'text-red-300' : 'text-slate-400'}`}>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isQuebra ? 'text-red-300' : isAtencao ? 'text-yellow-500' : 'text-slate-400'}`}>
                             Meta Estabelecida
                         </span>
-                        <span className={`text-sm font-black ${isQuebra ? 'text-red-400' : 'text-slate-900'}`}>
+                        <span className={`text-sm font-black ${isQuebra ? 'text-red-400' : isAtencao ? 'text-yellow-600' : 'text-slate-900'}`}>
                            {meta}
                         </span>
                     </div>
                 </div>
             </div>
             <div className={`mt-8 flex items-center gap-4`}>
-                <div className={`h-2 flex-1 rounded-full overflow-hidden ${isQuebra ? 'bg-red-100' : 'bg-slate-100'}`}>
+                <div className={`h-2 flex-1 rounded-full overflow-hidden ${isQuebra ? 'bg-red-100' : isAtencao ? 'bg-yellow-100' : 'bg-slate-100'}`}>
                     <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: isQuebra ? '100%' : '75%' }}
                         transition={{ duration: 1, ease: "easeOut" }}
-                        className={`h-full rounded-full ${isQuebra ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`}
+                        className={`h-full rounded-full ${isQuebra ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : isAtencao ? 'bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`}
                     />
                 </div>
                 {isQuebra && <AlertCircle className="w-6 h-6 text-red-500 animate-pulse" />}
+                {isAtencao && <AlertCircle className="w-6 h-6 text-yellow-500 animate-pulse" />}
             </div>
         </div>
     );

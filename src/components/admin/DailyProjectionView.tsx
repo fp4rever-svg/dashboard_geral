@@ -119,7 +119,14 @@ export function DailyProjectionView() {
     : 0;
   const displayCenarioComercial = calcCenarioComercial.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
   const calcLimiteComercial = Math.round(metaComercialNum * displayVendaTotal);
-  const statusComercial = calcCenarioComercial > (metaComercialNum * 100) ? 'Quebra' : 'OK';
+  
+  const getStatusComercial = () => {
+    const metaPct = metaComercialNum * 100;
+    if (calcCenarioComercial > metaPct) return 'Quebra';
+    if (calcCenarioComercial > (metaPct - 0.02)) return 'Atenção';
+    return 'OK';
+  };
+  const statusComercial = getStatusComercial();
 
   // Row 2: Cancelamento Operacional
   const metaOperacionalNum = parseValue(data.cancelamentoOperacional.meta) / 100;
@@ -128,7 +135,14 @@ export function DailyProjectionView() {
     : 0;
   const displayCenarioOperacional = calcCenarioOperacional.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
   const calcLimiteOperacional = Math.round(metaOperacionalNum * displayVendaTotal);
-  const statusOperacional = calcCenarioOperacional > (metaOperacionalNum * 100) ? 'Quebra' : 'OK';
+  
+  const getStatusOperacional = () => {
+    const metaPct = metaOperacionalNum * 100;
+    if (calcCenarioOperacional > metaPct) return 'Quebra';
+    if (calcCenarioOperacional > (metaPct - 0.02)) return 'Atenção';
+    return 'OK';
+  };
+  const statusOperacional = getStatusOperacional();
 
   // Row 3: UPM Éticos
   const metaUPM = parseValue(data.upmEticos.meta);
@@ -136,7 +150,13 @@ export function DailyProjectionView() {
     ? Math.round((data.upmEticos.valor / displayConferenciaLinha) * 1000000) 
     : 0;
   const calcLimiteUPM = Math.round((displayConferenciaLinha * metaUPM) / 1000000);
-  const statusUPM = calcUPMEticos > metaUPM ? 'Quebra' : 'OK';
+  
+  const getStatusUPM = () => {
+    if (calcUPMEticos > metaUPM) return 'Quebra';
+    if (calcUPMEticos > (metaUPM * (1 - 0.0002))) return 'Atenção';
+    return 'OK';
+  };
+  const statusUPM = getStatusUPM();
 
   // Volume Diário Calculations
   const calcLimiteVolumeDiario = data.otsPadrao > 0 ? Math.round(data.otsPadrao / 7) : 0;
@@ -315,6 +335,7 @@ function StatInputCard({ label, value, onChange, icon: Icon, type = 'number', di
 
 function TableRow({ label, data, onUpdate, calculatedCenario, calculatedLimite, calculatedStatus }: any) {
     const isQuebra = calculatedStatus === 'Quebra';
+    const isAtencao = calculatedStatus === 'Atenção';
     
     return (
         <tr className="hover:bg-slate-50/50 transition-colors">
@@ -351,9 +372,11 @@ function TableRow({ label, data, onUpdate, calculatedCenario, calculatedLimite, 
                 <div className={`flex items-center gap-2 px-3 py-1 rounded-full w-fit ${
                     isQuebra 
                         ? 'bg-red-50 text-red-600 border border-red-100' 
-                        : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                        : isAtencao
+                            ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+                            : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                 }`}>
-                    {isQuebra ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                    {isQuebra ? <AlertTriangle className="w-3 h-3" /> : isAtencao ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
                     <span className="text-[10px] font-black uppercase tracking-widest">{calculatedStatus}</span>
                 </div>
             </td>
