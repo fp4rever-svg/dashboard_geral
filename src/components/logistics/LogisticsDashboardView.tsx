@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductionDashboardView } from '../dashboard/ProductionDashboardView';
+import { NewsTicker } from '../common/NewsTicker';
 import AnnouncementsView from '../views/AnnouncementsView';
 import { useLogisticsData } from '../../hooks/useLogisticsData';
-import { useProjectionData } from '../../hooks/useProjectionData';
+import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData';
 import { useAbsenteeismData } from '../../hooks/useAbsenteeismData';
 import { useWakeLock } from '../../hooks/useWakeLock';
 import { 
@@ -39,8 +40,8 @@ const FIXED_DATA: Omit<LogisticsRow, 'status' | 'docsIniciais' | 'docsAtuais'>[]
     { rotas: '733', horarios: '01:00:00' },
     { rotas: '734', horarios: '01:00:00' },
     { rotas: '764', horarios: '01:30:00' },
-    { rotas: '722', horarios: '02:10:00' },
-    { rotas: '761', horarios: '02:40:00' },
+    { rotas: '722', horarios: '02:40:00' },
+    { rotas: '761', horarios: '02:10:00' },
     { rotas: '741', horarios: '03:00:00' },
     { rotas: '742', horarios: '03:00:00' },
     { rotas: '720', horarios: '04:20:00' },
@@ -93,16 +94,18 @@ interface LogisticsDashboardViewProps {
   selectedRoute?: string;
 }
 
-interface ProjectionData {
-  cancelamentoComercial: { meta: string; valor: number; cenarioAtual: string; limite: number };
-  cancelamentoOperacional: { meta: string; valor: number; cenarioAtual: string; limite: number };
-  upmEticos: { meta: number; valor: number; cenarioAtual: number; limite: number };
-}
-
 export function LogisticsDashboardView({ productionData, forcedView, externalTVMode, selectedRoute = '' }: LogisticsDashboardViewProps) {
     const { rows, loading: loadingLogistics } = useLogisticsData();
     const { data: projection, loading: loadingProjection } = useProjectionData();
     const { totals: absenteeismTotals } = useAbsenteeismData();
+    const tickerMessages = productionData ? [
+        `Ritmo de Produção: ${productionData.totals.totalSeparaACS} ACS separados | ${productionData.totals.totalSeparaUND} UND separados.`,
+        `Performance: ${productionData.totals.totalSeparaACS >= projection.volumeDiario.meta ? 'Operação Dentro da Meta' : 'Atenção: Operação Abaixo da Meta'}`,
+        `Último Registro Acessos: ${productionData.lastHourACS} ACS na última hora.`,
+        `Risco Rota Gargalo: ${rows.filter(r => r.status === 'Atrasado').length > 0 ? `Rota ${rows.filter(r => r.status === 'Atrasado')[0].rotas} em atraso` : 'Nenhum risco identificado'}`,
+        `Faltas na Operação: ${absenteeismTotals.faltas} colaboradores ausentes.`
+    ] : [];
+    
     const [searchQuery, setSearchQuery] = useState('');
     const [isTVMode, setIsTVMode] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
@@ -184,6 +187,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
   
     return (
       <div className={`space-y-6 ${isTVMode ? 'fixed inset-0 z-[100] bg-slate-50 p-8 overflow-y-auto' : ''}`}>
+        {productionData && <NewsTicker messages={tickerMessages} />}
         {/* Header & Controls */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
