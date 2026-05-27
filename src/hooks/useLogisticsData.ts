@@ -32,19 +32,44 @@ const FIXED_DATA = [
   { rotas: '727', horarios: '08:00:00' },
 ];
 
-export function isShiftActive() {
+export function getShiftInfo() {
   const now = new Date();
-  const day = now.getDay();
+  const day = now.getDay(); // 0 is Sunday, 1 is Monday, ..., 5 is Friday
   const hour = now.getHours();
 
-  // Shift is active if:
-  // Monday >= 22:00 OR Tuesday < 07:00
-  return (day === 1 && hour >= 22) || (day === 2 && hour < 7);
+  // Weekday night shift: 22:00 to 07:00
+  // Mon night (Mon 22 - Tue 07)
+  // Tue night (Tue 22 - Wed 07)
+  // Wed night (Wed 22 - Thu 07)
+  // Thu night (Thu 22 - Fri 07)
+  // Fri night (Fri 22 - Sat 07)
+
+  // Is it currently the night shift?
+  // Mon night: (day === 1 && hour >= 22) || (day === 2 && hour < 7)
+  // Tue night: (day === 2 && hour >= 22) || (day === 3 && hour < 7)
+  // We can generalize:
+  // Active if day is [1, 2, 3, 4, 5] and hour >= 22
+  // OR day is [2, 3, 4, 5, 6] and hour < 7
+
+  const isShift = (day >= 1 && day <= 5 && hour >= 22) || (day >= 2 && day <= 6 && hour < 7);
+  
+  // Special Monday-Tuesday (Mon night = Mon 22:00 to Tue 07:00)
+  const isSpecial = (day === 1 && hour >= 22) || (day === 2 && hour < 7);
+  
+  return { isActive: isShift, isSpecial };
+}
+
+export function isShiftActive() {
+  return getShiftInfo().isActive;
 }
 
 export function adjustHorarioForShift(horarioStr: string) {
-  if (!isShiftActive()) return horarioStr;
+  const { isActive, isSpecial } = getShiftInfo();
+  if (!isActive) return horarioStr;
   
+  // Apply +1 hour if it's the special Monday-Tuesday shift
+  if (!isSpecial) return horarioStr;
+
   const [h, m, s] = horarioStr.split(':').map(Number);
   const newH = (h + 1) % 24;
   return `${String(newH).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
@@ -53,7 +78,6 @@ export function adjustHorarioForShift(horarioStr: string) {
 export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, horarioStr: string) {
   if (!horarioStr) return 'Pendente';
   
-  // 100% completion rule
   if (docsIniciais > 0 && docsAtuais === 0) {
     return "Finalizado";
   }
@@ -64,14 +88,14 @@ export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, hor
   const targetTime = new Date();
   targetTime.setHours(h, m || 0, s || 0, 0);
 
-  // Fix: If it's the shift start (after 22:00) and the route is in the early morning (before 10 AM), 
-  // it belongs to the next day, not the current day.
   if (now.getHours() >= 22 && h < 10) {
     targetTime.setDate(targetTime.getDate() + 1);
   }
 
-  // Shift rule: +1 hour
-  if (isShiftActive()) {
+  const { isActive, isSpecial } = getShiftInfo();
+
+  // Shift rule: +1 hour for special Mon-Tue shift
+  if (isActive && isSpecial) {
     targetTime.setHours(targetTime.getHours() + 1);
   }
 

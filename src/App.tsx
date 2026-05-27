@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
 import { auth, db } from './lib/firebase';
-import { TopAppBar } from './components/layout/TopAppBar';
 import { SideNavBar } from './components/layout/SideNavBar';
+import { MinimalHeader } from './components/layout/MinimalHeader';
 import { KPICard } from './components/dashboard/KPICard';
 import { HourlyTrendChart } from './components/dashboard/HourlyTrendChart';
 import { PerformanceTable } from './components/dashboard/PerformanceTable';
@@ -158,7 +158,7 @@ export default function App() {
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden relative">
       <GlobalAlertBar />
       {!isMaximized && (
-        <TopAppBar activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} onLoginClick={() => setShowLogin(true)} />
+        <MinimalHeader isAdmin={isAdmin} onLoginClick={() => setShowLogin(true)} onLogoutClick={handleLogout} />
       )}
       <div className="flex flex-1 overflow-hidden">
         {!isMaximized && (

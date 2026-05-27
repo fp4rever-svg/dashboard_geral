@@ -505,7 +505,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.9, y: 10 }}
                                                 transition={{ delay: index * 0.01 }}
-                                                className={`bg-white p-5 rounded-2xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60 scale-75' : 'border-slate-200 shadow-sm'} hover:border-blue-400 transition-all hover:shadow-2xl group relative cursor-pointer active:scale-95`}
+                                                className={`bg-white p-5 rounded-2xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60 scale-75' : 'border-slate-200 shadow-sm'} ${row.status === 'Atrasado' ? 'ring-2 ring-red-400 animate-pulse' : ''} hover:border-blue-400 transition-all hover:shadow-2xl group relative cursor-pointer active:scale-95`}
                                             >
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="space-y-0.5">
