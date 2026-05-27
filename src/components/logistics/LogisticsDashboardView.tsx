@@ -418,49 +418,56 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                     <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 auto-rows-[140px] gap-4">
                         {/* 1. Network Activity Block (2x2) */}
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="md:col-span-2 lg:col-span-6 lg:row-span-2 bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl shadow-slate-900/30"
+                            whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(59, 130, 246, 0.25)" }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="md:col-span-2 lg:col-span-6 lg:row-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl shadow-blue-500/10 border border-white/5"
                         >
-                            <div className="relative z-10">
-                                <div className="flex justify-between items-start">
-                                    <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
-                                        <Activity className="w-6 h-6 text-blue-400" />
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(59,130,246,0.15),transparent_70%)]"></div>
+                            
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                                <div className="flex justify-between items-start w-full">
+                                    <div className="p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10">
+                                        <Activity className="w-8 h-8 text-blue-400" />
                                     </div>
-                                    <span className="text-[10px] font-black px-3 py-1 bg-white/10 rounded-full uppercase tracking-[0.2em] backdrop-blur-md border border-white/10">CONCLUIDOS</span>
+                                    <span className="text-[11px] font-black px-4 py-1.5 bg-blue-500/20 text-blue-300 rounded-full uppercase tracking-[0.2em] backdrop-blur-md border border-blue-500/20">LIVE</span>
                                 </div>
-                                <div className="mt-8">
-                                    <div className="flex items-baseline gap-2">
-                                        <h3 className="text-6xl font-black tracking-tighter text-blue-400">{filteredCompletion.display.replace('%', '')}<span className="text-2xl text-white/40">%</span></h3>
+                                <div className="mt-6">
+                                    <div className="flex items-baseline gap-3">
+                                        <h3 className="text-7xl font-black tracking-tighter text-white">{filteredCompletion.display.replace('%', '')}<span className="text-3xl text-white/30">%</span></h3>
                                     </div>
-                                    <p className="text-slate-400 text-sm font-bold mt-2 uppercase tracking-widest">Conclusão</p>
+                                    <p className="text-slate-400 text-sm font-black mt-2 uppercase tracking-[0.2em]">Conclusão Operacional</p>
                                 </div>
                             </div>
 
-                            <div className="relative z-10 space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black text-slate-500 uppercase">Processados</p>
-                                        <p className="text-xl font-black text-white">{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()}</p>
+                            <div className="relative z-10 space-y-8 flex flex-col items-center text-center">
+                                <div className="grid grid-cols-2 gap-8 w-full max-w-sm">
+                                    <div className="space-y-1.5">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Processados</p>
+                                        <p className="text-3xl font-black text-white">{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()}</p>
                                     </div>
-                                    <div className="space-y-1 text-right">
-                                        <p className="text-[9px] font-black text-slate-500 uppercase">Pendentes</p>
-                                        <p className="text-xl font-black text-white">{filteredDocsAtuais.toLocaleString()}</p>
+                                    <div className="space-y-1.5">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pendentes</p>
+                                        <p className="text-3xl font-black text-blue-400">{filteredDocsAtuais.toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
-                                    <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: filteredCompletion.display }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="bg-gradient-to-r from-blue-600 to-blue-400 h-full rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)]"
-                                    ></motion.div>
+                                <div className="w-full max-w-sm flex flex-col items-center gap-2">
+                                    <div className="flex justify-between w-full text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                        <span>Progresso de Conclusão</span>
+                                        <span>{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()} / {filteredDocsIniciais.toLocaleString()}</span>
+                                    </div>
+                                    <div className="w-full bg-slate-950/50 h-3 rounded-full overflow-hidden backdrop-blur-md border border-white/5 shadow-inner">
+                                        <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: filteredCompletion.display }}
+                                            transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+                                            className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 h-full rounded-full shadow-[0_0_20px_rgba(59,130,246,0.7)]"
+                                        >
+                                            <div className="w-full h-full opacity-30 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] bg-[length:20px_20px] animate-pulse"></div>
+                                        </motion.div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            {/* Decorative background elements */}
-                            <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.3),transparent_70%)]"></div>
                             </div>
                         </motion.div>
 
@@ -469,10 +476,14 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="md:col-span-2 lg:col-span-6 bg-slate-900 rounded-3xl p-10 shadow-xl flex flex-col justify-center gap-2 hover:shadow-2xl transition-all duration-300"
+                            whileHover={{ y: -5, boxShadow: "0 25px 30px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)" }}
+                            className="md:col-span-2 lg:col-span-6 bg-slate-900 rounded-3xl p-10 shadow-xl flex flex-col justify-center gap-2 transition-all duration-300 relative overflow-hidden"
                         >
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Próxima Janela</p>
-                                <div className="flex items-baseline gap-4">
+                                <div className="absolute -bottom-6 -right-6 opacity-[0.25] pointer-events-none rotate-6 [filter:drop-shadow(0_0_12px_rgba(148,163,184,0.3))_drop-shadow(0_0_2px_rgba(148,163,184,0.2))]">
+                                    <Truck size={220} strokeWidth={1} className="text-slate-700" />
+                                </div>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10">Próxima Janela</p>
+                                <div className="flex items-baseline gap-4 relative z-10">
                                     <p className="text-6xl font-black text-white">{nextRoute?.horarios.substring(0, 5) || '--:--'}</p>
                                     <span className="text-sm font-black text-blue-400 bg-blue-500/10 px-4 py-1 rounded-lg">Rota {nextRoute?.rotas || 'N/A'}</span>
                                 </div>
@@ -483,10 +494,14 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="md:col-span-2 lg:col-span-6 bg-white rounded-3xl p-10 shadow-lg border border-slate-100 flex flex-col justify-center gap-2 hover:shadow-xl transition-all duration-300"
+                            whileHover={{ y: -5, boxShadow: "0 25px 30px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05)" }}
+                            className="md:col-span-2 lg:col-span-6 bg-white rounded-3xl p-10 shadow-lg border border-slate-100 flex flex-col justify-center gap-2 transition-all duration-300 relative overflow-hidden"
                         >
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Faltantes</p>
-                                <div className="flex items-baseline gap-4">
+                                <div className="absolute -bottom-6 -right-6 opacity-[0.06] pointer-events-none rotate-6 [filter:drop-shadow(0_0_12px_rgba(148,163,184,0.3))_drop-shadow(0_0_2px_rgba(148,163,184,0.2))]">
+                                    <Package size={220} strokeWidth={1} className="text-slate-400" />
+                                </div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest relative z-10">Total Faltantes</p>
+                                <div className="flex items-baseline gap-4 relative z-10">
                                     <p className="text-6xl font-black text-blue-600">{totalFaltantes.toLocaleString()}</p>
                                     <span className="text-sm font-black text-slate-600">Caixas Faltantes</span>
                                 </div>
