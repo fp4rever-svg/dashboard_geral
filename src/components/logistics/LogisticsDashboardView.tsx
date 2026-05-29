@@ -131,12 +131,18 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
         });
     }, [rows]);
 
+    const isQuebraComercial = projection && parseBrValue(projection.cancelamentoComercial.cenarioAtual) > parseBrValue(projection.cancelamentoComercial.meta);
+    const isQuebraOperacional = projection && parseBrValue(projection.cancelamentoOperacional.cenarioAtual) > parseBrValue(projection.cancelamentoOperacional.meta);
+    const isQuebraUPM = projection && projection.upmEticos.cenarioAtual > projection.upmEticos.meta;
+    const isCritical = isQuebraComercial || isQuebraOperacional || isQuebraUPM;
+
     const tickerMessages = productionData ? [
         `Ritmo de Produção: ${productionData.totals.totalSeparaACS} ACS separados | ${productionData.totals.totalSeparaUND} UND separados.`,
         `Performance: ${productionData.totals.averageSeparaACS >= projection.volumeDiario.meta ? 'Operação Dentro da Meta' : 'Atenção: Operação Abaixo da Meta'}`,
         `Último Registro Acessos: ${productionData.lastHourACS} ACS na última hora.`,
         `Risco Rota Gargalo: ${persistentDelayedRoutes.size > 0 ? `Rotas ${Array.from(persistentDelayedRoutes).join(', ')} em atraso hoje` : 'Nenhum risco identificado'}`,
-        `Faltas na Operação: ${absenteeismTotals.faltas} colaboradores ausentes.`
+        `Faltas na Operação: ${absenteeismTotals.faltas} colaboradores ausentes.`,
+        ...(isCritical ? ['⚠️ ALERTA CRÍTICO: Indicações de quebra de meta em indicadores operacionais!'] : [])
     ] : [];
     
     const [searchQuery, setSearchQuery] = useState('');
