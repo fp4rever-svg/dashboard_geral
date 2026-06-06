@@ -4,7 +4,7 @@ import { Trophy, Medal, Crown, Loader2, Users } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function TopPerformanceCard() {
-  const { data, loading } = useUserPerformance();
+  const { data, period, loading } = useUserPerformance();
 
   if (loading) {
     return (
@@ -54,11 +54,18 @@ export function TopPerformanceCard() {
       transition={{ duration: 0.4 }}
       className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
     >
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-          <Trophy className="w-6 h-6 text-amber-500 fill-amber-100" />
-          TOP 5 Performance
-        </h3>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+        <div>
+          <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-amber-500 fill-amber-100" />
+            TOP 5 Performance
+          </h3>
+          {period && (period.startDate || period.endDate) && (
+            <p className="text-xs text-slate-500 mt-1 font-semibold">
+              Período de Avaliação: de <span className="font-extrabold text-slate-700">{period.startDate || '?'}</span> até <span className="font-extrabold text-slate-700">{period.endDate || '?'}</span>
+            </p>
+          )}
+        </div>
         <span className="text-[10px] font-black text-slate-400 bg-slate-100 border border-slate-200 rounded-full px-3 py-1 uppercase tracking-widest">
           Hoje
         </span>

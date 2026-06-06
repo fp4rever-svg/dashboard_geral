@@ -1,14 +1,26 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useUserPerformance, UserPerformanceRow } from '../../hooks/useUserPerformance';
 import { Upload, Download, Loader2, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function UserPerformanceManager() {
-  const { data, loading, updateAllData, addRow, updateRow, deleteRow, clearAllData } = useUserPerformance();
+  const { data, period, updatePeriod, loading, updateAllData, addRow, updateRow, deleteRow, clearAllData } = useUserPerformance();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [importLoading, setImportLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // Period inputs state
+  const [startDateInput, setStartDateInput] = useState(period?.startDate || '');
+  const [endDateInput, setEndDateInput] = useState(period?.endDate || '');
+  const [savingPeriod, setSavingPeriod] = useState(false);
+
+  useEffect(() => {
+    if (period) {
+      setStartDateInput(period.startDate || '');
+      setEndDateInput(period.endDate || '');
+    }
+  }, [period]);
   
   // Manual form state
   const [newUser, setNewUser] = useState('');
@@ -196,6 +208,43 @@ export function UserPerformanceManager() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Date period editor */}
+      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Início do Período</label>
+          <input 
+            type="text" 
+            placeholder="Ex: 25/05" 
+            value={startDateInput}
+            onChange={e => setStartDateInput(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 focus:outline-none focus:border-blue-400"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Fim do Período</label>
+          <input 
+            type="text" 
+            placeholder="Ex: 30/05" 
+            value={endDateInput}
+            onChange={e => setEndDateInput(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 focus:outline-none focus:border-blue-400"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            setSavingPeriod(true);
+            await updatePeriod(startDateInput, endDateInput);
+            setSavingPeriod(false);
+          }}
+          disabled={savingPeriod}
+          className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-bold text-sm h-[38px] shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+        >
+          {savingPeriod ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          Atualizar Período de Avaliação
+        </button>
       </div>
 
       <AnimatePresence>

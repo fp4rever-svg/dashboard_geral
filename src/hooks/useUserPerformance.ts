@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, writeBatch, doc, getDocs, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, writeBatch, doc, getDocs, updateDoc, deleteDoc, addDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/utils';
 
@@ -13,8 +13,14 @@ export interface UserPerformanceRow {
   order?: number;
 }
 
+export interface UserPerformancePeriodConfig {
+  startDate: string;
+  endDate: string;
+}
+
 export function useUserPerformance() {
   const [data, setData] = useState<UserPerformanceRow[]>([]);
+  const [period, setPeriod] = useState<UserPerformancePeriodConfig>({ startDate: '', endDate: '' });
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
@@ -36,8 +42,33 @@ export function useUserPerformance() {
       setLoading(false);
     });
 
-    return () => unsub();
+    const configDocRef = doc(db, 'config', 'user_performance_period');
+    const unsubConfig = onSnapshot(configDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const d = docSnap.data();
+        setPeriod({
+          startDate: d.startDate || '',
+          endDate: d.endDate || ''
+        });
+      }
+    }, (error) => {
+      console.warn('Erro ao carregar o período de monitoramento:', error);
+    });
+
+    return () => {
+      unsub();
+      unsubConfig();
+    };
   }, []);
+
+  const updatePeriod = async (startDate: string, endDate: string) => {
+    try {
+      const configDocRef = doc(db, 'config', 'user_performance_period');
+      await setDoc(configDocRef, { startDate, endDate });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'config/user_performance_period');
+    }
+  };
 
   const updateAllData = async (newData: UserPerformanceRow[]) => {
     try {
@@ -105,5 +136,5 @@ export function useUserPerformance() {
     }
   };
 
-  return { data, loading, lastUpdated, updateAllData, addRow, updateRow, deleteRow, clearAllData };
+  return { data, period, updatePeriod, loading, lastUpdated, updateAllData, addRow, updateRow, deleteRow, clearAllData };
 }
