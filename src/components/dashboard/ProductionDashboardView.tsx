@@ -1,9 +1,10 @@
-import { Package, Clock, Box, LayoutGrid, TrendingUp } from 'lucide-react';
+import { Package, Clock, Box, LayoutGrid, TrendingUp, Calendar } from 'lucide-react';
 import { KPICard } from '../dashboard/KPICard';
 import { HourlyTrendChart } from '../dashboard/HourlyTrendChart';
 import { ProductionTrendChart } from '../dashboard/ProductionTrendChart';
 import { TopPerformanceCard } from './TopPerformanceCard';
 import { motion } from 'motion/react';
+import { useUserPerformance } from '../../hooks/useUserPerformance';
 
 interface ProductionDashboardViewProps {
   totals: {
@@ -19,8 +20,34 @@ interface ProductionDashboardViewProps {
 }
 
 export function ProductionDashboardView({ totals, lastHourACS, chartData, formatValue, otsPadrao }: ProductionDashboardViewProps) {
+  const { period } = useUserPerformance();
+
   return (
     <div className="space-y-8">
+      {period && (period.startDate || period.endDate) && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-blue-50 border border-blue-100 text-blue-800 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/15">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-black tracking-tight text-blue-950">Período de Avaliação Ativo</h4>
+              <p className="text-xs text-blue-700 font-bold mt-0.5">Os dados de performance individual desta tela correspondem ao período de monitoramento configurado.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white border border-blue-100 px-5 py-3 rounded-2xl shadow-sm text-sm font-black text-blue-900 border-dashed">
+            <span>De:</span>
+            <span className="text-blue-600 px-1 bg-blue-50 border border-blue-100/50 rounded-lg">{period.startDate || '?'}</span>
+            <span className="text-slate-400 font-medium">Até:</span>
+            <span className="text-blue-600 px-1 bg-blue-50 border border-blue-100/50 rounded-lg">{period.endDate || '?'}</span>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard title="Total Cubagem ACS" value={formatValue(totals.totalCubagem)} icon={Package} trend="+12,5%" />
         <KPICard title="SEPARAÇÃO ACESSOS / ULTIMA HORA" value={lastHourACS} icon={Clock} />
