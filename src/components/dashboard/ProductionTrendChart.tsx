@@ -40,8 +40,7 @@ export function ProductionTrendChart({ data, target }: ProductionTrendChartProps
   });
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-[400px]">
-      <h2 className="text-lg font-bold text-slate-900 mb-4">Tendência SEPARAÇÃO ACS</h2>
+    <div className="w-full h-full min-h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={processedData} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />

@@ -146,32 +146,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
     : top5;
 
   return (
-    <div className="space-y-8">
-      {/* Dynamic Evaluation Period Active Header */}
-      {period && (period.startDate || period.endDate) && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-blue-50 border border-blue-100 text-blue-800 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/15">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-base font-black tracking-tight text-blue-950">Período de Avaliação Ativo</h4>
-              <p className="text-xs text-blue-700 font-bold mt-0.5">Os dados de performance individual abaixo foram apurados na janela de monitoramento selecionada.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-white border border-blue-150 px-5 py-3 rounded-2xl shadow-sm text-sm font-black text-blue-900 border-dashed">
-            <span>De:</span>
-            <span className="text-blue-600 px-1.5 bg-blue-50 border border-blue-100/50 rounded-lg">{period.startDate || '?'}</span>
-            <span className="text-slate-400 font-medium">Até:</span>
-            <span className="text-blue-600 px-1.5 bg-blue-50 border border-blue-100/50 rounded-lg">{period.endDate || '?'}</span>
-          </div>
-        </motion.div>
-      )}
-
+    <div className="space-y-5">
       {/* Control Bar: Premium Dashboard Loop Configurator (Only when not externally controlled) */}
       {forcedSlide === undefined && (
         <div className="bg-slate-900 text-white rounded-[2rem] p-5 shadow-xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
@@ -265,7 +240,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
       )}
 
       {/* ALWAYS VISIBLE PRODUCTION CORE KPIS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Total Cubagem ACS" value={formatValue(totals.totalCubagem)} icon={Package} trend="+12,5%" />
         <KPICard title="SEPARAÇÃO ACESSOS / ULTIMA HORA" value={lastHourACS} icon={Clock} />
         <KPICard title="Total Separa.UND" value={formatValue(totals.totalSeparaUND)} icon={Box} status="Ativo" />
@@ -273,7 +248,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
       </div>
 
       {/* DYNAMIC SHIFT CONTENT PANE WITH HIGH-IMPACT LAYOUT */}
-      <div className="relative min-h-[500px]">
+      <div className="relative min-h-[400px]">
         <AnimatePresence mode="wait">
           {currentSlide === 0 ? (
             /* SLIDE 0: GENERAL PRODUCTION TREND GRAPHICS */
@@ -283,11 +258,11 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: -15 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
             >
-              <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col h-[480px]">
-                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                  <LayoutGrid className="w-6 h-6 text-blue-600" />
+              <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-sm flex flex-col h-[380px]">
+                <h3 className="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
+                  <LayoutGrid className="w-5 h-5 text-blue-600" />
                   Tendência de Separação (UNID)
                 </h3>
                 <div className="flex-1 min-h-0">
@@ -295,9 +270,9 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                 </div>
               </div>
 
-              <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col h-[480px]">
-                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                  <TrendingUp className="w-6 h-6 text-emerald-600" />
+              <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-sm flex flex-col h-[380px]">
+                <h3 className="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
                   Projeção de Performance (ACS)
                 </h3>
                 <div className="flex-1 min-h-0">
@@ -313,65 +288,90 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: -15 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="space-y-6"
+              className="space-y-4"
             >
+              {/* Dynamic Evaluation Period Active Header - ONLY displayed with TOP 5 Ranking slide */}
+              {period && (period.startDate || period.endDate) && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-blue-50/70 border border-blue-100 text-blue-800 rounded-2xl p-3.5 px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-600 text-white rounded-xl shadow-md shrink-0">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black tracking-tight text-blue-950">Período de Avaliação Ativo</h4>
+                      <p className="text-[11px] text-blue-700 font-bold mt-0.5">Os dados de performance individual abaixo foram apurados na janela de monitoramento selecionada.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white border border-blue-150 px-3 py-1.5 rounded-xl shadow-sm text-xs font-black text-blue-900 border-dashed">
+                    <span>De:</span>
+                    <span className="text-blue-600 px-1.5 bg-blue-50 border border-blue-100/50 rounded-lg">{period.startDate || '?'}</span>
+                    <span className="text-slate-400 font-medium">Até:</span>
+                    <span className="text-blue-600 px-1.5 bg-blue-50 border border-blue-100/50 rounded-lg">{period.endDate || '?'}</span>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Grand Header for TV Board */}
-              <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/15 p-6 rounded-[2rem] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/15 p-5 rounded-[2rem] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/25">
-                    <Trophy className="w-6 h-6 animate-pulse" />
+                  <div className="p-2.5 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/25">
+                    <Trophy className="w-5 h-5 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 leading-none">Ranking Individual de Excelência</h3>
+                    <h3 className="text-xl font-black text-slate-900 leading-none">Ranking Individual de Excelência</h3>
                     <p className="text-xs text-slate-500 font-extrabold tracking-wider uppercase mt-1">
                       Os melhores em destaque - Período de Avaliação Corrente
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black tracking-widest uppercase">
-                  <Award className="w-4 h-4 text-amber-400" />
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-xl text-[10px] font-black tracking-widest uppercase">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
                   Quadro de Destaques
                 </div>
               </div>
 
               {top5.length === 0 ? (
-                <div className="bg-white p-12 rounded-[2rem] border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center py-24 min-h-[400px]">
-                  <Trophy className="w-16 h-16 text-slate-200 mb-4 animate-bounce" />
+                <div className="bg-white p-10 rounded-[2rem] border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center py-20 min-h-[350px]">
+                  <Trophy className="w-14 h-14 text-slate-200 mb-4 animate-bounce" />
                   <h4 className="text-lg font-black text-slate-800">Sem dados computados ainda</h4>
                   <p className="text-slate-400 text-sm mt-1 max-w-sm">
                     Preencha ou faça a importação do controle individual via painel para exibir o ranking.
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   {/* Left Column: Majestic Sport Podium [Silver (pos 1), Gold (pos 0), Bronze (pos 2)] */}
-                  <div className="lg:col-span-8 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col h-[400px] justify-between relative overflow-hidden">
+                  <div className="lg:col-span-8 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col h-[350px] justify-between relative overflow-hidden">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.03),transparent_70%)]"></div>
                     
-                    <div className="relative z-10 grid grid-cols-3 gap-4 items-end mt-4 h-full">
+                    <div className="relative z-10 grid grid-cols-3 gap-4 items-end mt-2 h-full">
                       {/* position 2 (Silver) */}
                       {top5[1] ? (
                         <motion.div 
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.1, duration: 0.5 }}
-                          className="flex flex-col items-center h-[85%] justify-between bg-slate-50/40 border border-slate-200/65 rounded-3xl p-4 shadow-sm text-center relative"
+                          className="flex flex-col items-center h-[85%] justify-between bg-slate-50/40 border border-slate-200/65 rounded-2xl p-3.5 shadow-sm text-center relative"
                         >
                           {renderPodiumTitle(1)}
-                          <div className="my-2.5">
-                            <h4 className="text-base font-black text-slate-800 leading-tight block truncate w-full max-w-[120px]" title={top5[1].user}>
+                          <div className="my-1.5 w-full min-w-0">
+                            <h4 className="text-sm font-black text-slate-800 leading-tight block truncate w-full" title={top5[1].user}>
                               {top5[1].user}
                             </h4>
-                            <div className="mt-1 flex flex-col gap-1 items-center">
-                              <span className="text-xs font-black text-slate-400 tracking-wider">ProdPct</span>
-                              <span className="text-lg font-black text-slate-700 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-lg inline-block text-center mt-0.5">
+                            <div className="mt-1 flex flex-col gap-0.5 items-center">
+                              <span className="text-[9px] font-black text-slate-400 tracking-wider">ProdPct</span>
+                              <span className="text-sm font-black text-slate-700 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded-md inline-block text-center">
                                 {top5[1].prodPct}
                               </span>
                             </div>
                           </div>
                         </motion.div>
                       ) : (
-                        <div className="h-[80%] border-2 border-dashed border-slate-100 rounded-3xl" />
+                        <div className="h-[80%] border-2 border-dashed border-slate-150 rounded-2xl" />
                       )}
 
                       {/* position 1 (Gold, centered and taller!) */}
@@ -380,23 +380,23 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                           initial={{ opacity: 0, y: 40 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.5 }}
-                          className="flex flex-col items-center h-full justify-between bg-gradient-to-b from-amber-500/10 via-amber-50/20 to-white border-2 border-amber-300 rounded-[2rem] p-5 shadow-lg text-center relative z-20"
+                          className="flex flex-col items-center h-full justify-between bg-gradient-to-b from-amber-500/10 via-amber-50/20 to-white border-2 border-amber-300 rounded-[2rem] p-4 shadow-lg text-center relative z-20"
                         >
                           {renderPodiumTitle(0)}
-                          <div className="my-3">
-                            <h4 className="text-lg font-extrabold text-amber-950 leading-tight block truncate w-full max-w-[150px]" title={top5[0].user}>
+                          <div className="my-2 w-full min-w-0">
+                            <h4 className="text-base font-black text-amber-950 leading-tight block truncate w-full" title={top5[0].user}>
                               {top5[0].user}
                             </h4>
-                            <div className="mt-2.5 flex flex-col gap-1 items-center">
-                              <span className="text-[11px] font-black text-amber-800 tracking-widest uppercase">Alta Performance</span>
-                              <span className="text-2xl font-black text-amber-600 bg-amber-500/10 border border-amber-300/40 px-3.5 py-1 rounded-xl inline-block mt-1">
+                            <div className="mt-1.5 flex flex-col gap-0.5 items-center">
+                              <span className="text-[9px] font-black text-amber-800 tracking-widest uppercase">Alta Performance</span>
+                              <span className="text-lg font-black text-amber-600 bg-amber-500/10 border border-amber-300/40 px-3 py-0.5 rounded-lg inline-block mt-0.5">
                                 {top5[0].prodPct}
                               </span>
                             </div>
                           </div>
                         </motion.div>
                       ) : (
-                        <div className="h-full border-2 border-dashed border-slate-100 rounded-[2rem]" />
+                        <div className="h-full border-2 border-dashed border-slate-150 rounded-[2rem]" />
                       )}
 
                       {/* position 3 (Bronze) */}
@@ -405,49 +405,49 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2, duration: 0.5 }}
-                          className="flex flex-col items-center h-[75%] justify-between bg-orange-50/20 border border-orange-200/50 rounded-3xl p-4 shadow-sm text-center relative"
+                          className="flex flex-col items-center h-[75%] justify-between bg-orange-50/20 border border-orange-200/50 rounded-2xl p-3 shadow-sm text-center relative"
                         >
                           {renderPodiumTitle(2)}
-                          <div className="my-2">
-                            <h4 className="text-base font-black text-orange-950 leading-tight block truncate w-full max-w-[120px]" title={top5[2].user}>
+                          <div className="my-1.5 w-full min-w-0">
+                            <h4 className="text-sm font-black text-orange-950 leading-tight block truncate w-full" title={top5[2].user}>
                               {top5[2].user}
                             </h4>
-                            <div className="mt-1 flex flex-col gap-1 items-center">
-                              <span className="text-xs font-black text-orange-850 tracking-wider">ProdPct</span>
-                              <span className="text-lg font-black text-orange-600 bg-orange-50 border border-orange-150/40 px-2.5 py-0.5 rounded-lg inline-block text-center mt-0.5">
+                            <div className="mt-1 flex flex-col gap-0.5 items-center">
+                              <span className="text-[9px] font-black text-orange-850 tracking-wider">ProdPct</span>
+                              <span className="text-sm font-black text-orange-600 bg-orange-50 border border-orange-150/40 px-2 py-0.5 rounded-md inline-block text-center">
                                 {top5[2].prodPct}
                               </span>
                             </div>
                           </div>
                         </motion.div>
                       ) : (
-                        <div className="h-[70%] border-2 border-dashed border-slate-100 rounded-3xl" />
+                        <div className="h-[70%] border-2 border-dashed border-slate-150 rounded-2xl" />
                       )}
                     </div>
                   </div>
 
                   {/* Right Column: Runner ups (#4 and #5) + Summary highlights */}
-                  <div className="lg:col-span-4 space-y-4">
+                  <div className="lg:col-span-4 space-y-3">
                     {/* Honorable Mentions Header */}
-                    <div className="bg-slate-900 text-white p-5 rounded-[2rem] shadow-md border border-white/5 space-y-4">
-                      <h4 className="text-sm font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                        <Award className="w-4 h-4 text-cyan-400" />
+                    <div className="bg-slate-900 text-white p-4.5 rounded-3xl shadow-md border border-white/5 space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <Award className="w-3.5 h-3.5 text-cyan-400" />
                         Quadro Adjunto (TOP 4 & 5)
                       </h4>
 
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {/* Runner #4 */}
                         {top5[3] ? (
-                          <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-2xl border border-white/5">
-                            <div className="flex items-center gap-3">
-                              <span className="w-7 h-7 rounded-lg bg-slate-800 border border-white/10 text-xs font-black flex items-center justify-center">
+                          <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-6 h-6 rounded bg-slate-800 border border-white/10 text-[10px] font-black flex items-center justify-center">
                                 4º
                               </span>
-                              <span className="text-sm font-black text-white truncate max-w-[130px]" title={top5[3].user}>
+                              <span className="text-xs font-black text-white truncate max-w-[120px]" title={top5[3].user}>
                                 {top5[3].user}
                               </span>
                             </div>
-                            <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                               {top5[3].prodPct}
                             </span>
                           </div>
@@ -455,16 +455,16 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
 
                         {/* Runner #5 */}
                         {top5[4] ? (
-                          <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-2xl border border-white/5">
-                            <div className="flex items-center gap-3">
-                              <span className="w-7 h-7 rounded-lg bg-slate-800 border border-white/10 text-xs font-black flex items-center justify-center">
+                          <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-6 h-6 rounded bg-slate-800 border border-white/10 text-[10px] font-black flex items-center justify-center">
                                 5º
                               </span>
-                              <span className="text-sm font-black text-white truncate max-w-[130px]" title={top5[4].user}>
+                              <span className="text-xs font-black text-white truncate max-w-[120px]" title={top5[4].user}>
                                 {top5[4].user}
                               </span>
                             </div>
-                            <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                               {top5[4].prodPct}
                             </span>
                           </div>
@@ -473,13 +473,13 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                     </div>
 
                     {/* Operational Performance TV Metric Tip */}
-                    <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-[2rem] flex items-start gap-4">
-                      <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-md">
-                        <Flame className="w-4 h-4 animate-bounce" />
+                    <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-3xl flex items-start gap-3">
+                      <div className="p-2 bg-amber-500 text-white rounded-xl shadow-md shrink-0">
+                        <Flame className="w-3.5 h-3.5 animate-bounce" />
                       </div>
                       <div>
-                        <h5 className="text-xs font-black text-amber-950 uppercase tracking-wider">Como calculamos</h5>
-                        <p className="text-[11px] text-amber-800 mt-1 leading-relaxed font-semibold">
+                        <h5 className="text-[10px] font-black text-amber-950 uppercase tracking-wider">Como calculamos</h5>
+                        <p className="text-[10px] text-amber-800 mt-1 leading-relaxed font-semibold">
                           O ranking é atualizado em tempo real. Ele pondera a produtividade total em percentual com relação à cubagem concluída e o UPM individual registrado para cada colaborador.
                         </p>
                       </div>
