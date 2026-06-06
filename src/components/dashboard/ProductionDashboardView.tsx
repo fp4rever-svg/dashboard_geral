@@ -362,11 +362,19 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                             <h4 className="text-sm font-black text-slate-800 leading-tight block truncate w-full" title={top5[1].user}>
                               {top5[1].user}
                             </h4>
-                            <div className="mt-1 flex flex-col gap-0.5 items-center">
-                              <span className="text-[9px] font-black text-slate-400 tracking-wider">ProdPct</span>
-                              <span className="text-sm font-black text-slate-700 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded-md inline-block text-center">
-                                {top5[1].prodPct}
-                              </span>
+                            <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">Prod</span>
+                                <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded-md inline-block min-w-[38px] text-center">
+                                  {top5[1].prodPct}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">UPM</span>
+                                <span className="text-xs font-black text-blue-600 bg-blue-50 border border-blue-100/50 px-1.5 py-0.5 rounded-md inline-block min-w-[38px] text-center">
+                                  {top5[1].upmPct}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
@@ -387,11 +395,19 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                             <h4 className="text-base font-black text-amber-950 leading-tight block truncate w-full" title={top5[0].user}>
                               {top5[0].user}
                             </h4>
-                            <div className="mt-1.5 flex flex-col gap-0.5 items-center">
-                              <span className="text-[9px] font-black text-amber-800 tracking-widest uppercase">Alta Performance</span>
-                              <span className="text-lg font-black text-amber-600 bg-amber-500/10 border border-amber-300/40 px-3 py-0.5 rounded-lg inline-block mt-0.5">
-                                {top5[0].prodPct}
-                              </span>
+                            <div className="mt-2 flex items-center justify-center gap-2">
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8.5px] font-black text-amber-800 tracking-wider uppercase">Prod</span>
+                                <span className="text-xs font-black text-amber-700 bg-amber-500/10 border border-amber-300/30 px-2 py-0.5 rounded-md inline-block min-w-[42px] text-center">
+                                  {top5[0].prodPct}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8.5px] font-black text-amber-800 tracking-wider uppercase">UPM</span>
+                                <span className="text-xs font-black text-blue-700 bg-blue-500/10 border border-blue-300/30 px-2 py-0.5 rounded-md inline-block min-w-[42px] text-center">
+                                  {top5[0].upmPct}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
@@ -412,11 +428,19 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                             <h4 className="text-sm font-black text-orange-950 leading-tight block truncate w-full" title={top5[2].user}>
                               {top5[2].user}
                             </h4>
-                            <div className="mt-1 flex flex-col gap-0.5 items-center">
-                              <span className="text-[9px] font-black text-orange-850 tracking-wider">ProdPct</span>
-                              <span className="text-sm font-black text-orange-600 bg-orange-50 border border-orange-150/40 px-2 py-0.5 rounded-md inline-block text-center">
-                                {top5[2].prodPct}
-                              </span>
+                            <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] font-black text-orange-800 tracking-wider uppercase">Prod</span>
+                                <span className="text-xs font-black text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-md inline-block min-w-[38px] text-center">
+                                  {top5[2].prodPct}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[8px] font-black text-orange-850 tracking-wider uppercase">UPM</span>
+                                <span className="text-xs font-black text-blue-600 bg-blue-50 border border-blue-100/50 px-1.5 py-0.5 rounded-md inline-block min-w-[38px] text-center">
+                                  {top5[2].upmPct}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
