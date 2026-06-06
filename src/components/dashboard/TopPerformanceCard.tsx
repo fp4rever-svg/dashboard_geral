@@ -52,34 +52,34 @@ export function TopPerformanceCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
+      className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
         <div>
-          <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-            <Trophy className="w-6 h-6 text-amber-500 fill-amber-100" />
+          <h3 className="text-lg font-black text-slate-900 flex items-center gap-2.5">
+            <Trophy className="w-5.5 h-5.5 text-amber-500 fill-amber-100" />
             TOP 5 Performance
           </h3>
           {period && (period.startDate || period.endDate) && (
-            <p className="text-xs text-slate-500 mt-1 font-semibold">
-              Período de Avaliação: de <span className="font-extrabold text-slate-700">{period.startDate || '?'}</span> até <span className="font-extrabold text-slate-700">{period.endDate || '?'}</span>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-semibold">
+              Período: <span className="font-extrabold text-slate-700">{period.startDate || '?'}</span> até <span className="font-extrabold text-slate-700">{period.endDate || '?'}</span>
             </p>
           )}
         </div>
-        <span className="text-[10px] font-black text-slate-400 bg-slate-100 border border-slate-200 rounded-full px-3 py-1 uppercase tracking-widest">
+        <span className="text-[8px] font-black text-slate-400 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5 uppercase tracking-widest">
           Hoje
         </span>
       </div>
 
       {top5.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-100">
-          <Users className="w-12 h-12 text-slate-300 mb-2" />
-          <p className="text-slate-400 italic text-sm">Dados de performance indisponíveis no momento.</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-100">
+          <Users className="w-10 h-10 text-slate-300 mb-1.5" />
+          <p className="text-slate-400 italic text-[11px]">Dados de performance indisponíveis no momento.</p>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col gap-3">
+        <div className="flex-1 flex flex-col gap-2">
           {/* Header */}
-          <div className="grid grid-cols-12 text-[10px] font-black text-slate-400 uppercase tracking-wider px-3 pb-1 border-b border-slate-50">
+          <div className="grid grid-cols-12 text-[9px] font-black text-slate-400 uppercase tracking-wider px-2 pb-1 border-b border-slate-50">
             <div className="col-span-1">Ref</div>
             <div className="col-span-3">Colaborador</div>
             <div className="col-span-2 text-right">Reg. UPM</div>
@@ -96,7 +96,7 @@ export function TopPerformanceCard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
               whileHover={{ scale: 1.01, backgroundColor: 'rgba(248, 250, 252, 0.5)' }}
-              className={`grid grid-cols-12 items-center px-3 py-3 rounded-2xl border border-transparent transition-colors ${
+              className={`grid grid-cols-12 items-center px-2 py-1.5 rounded-xl border border-transparent transition-colors ${
                 index === 0 
                   ? 'bg-gradient-to-r from-amber-50/40 via-amber-50/10 to-transparent border-amber-100/50' 
                   : ''
@@ -106,28 +106,28 @@ export function TopPerformanceCard() {
                 {getRankBadge(index)}
               </div>
               
-              <div className="col-span-3">
-                <span className="text-sm font-black text-slate-900 tracking-tight block">
+              <div className="col-span-3 pr-1">
+                <span className="text-xs font-black text-slate-900 tracking-tight block truncate" title={row.user}>
                   {row.user}
                 </span>
               </div>
               
-              <div className="col-span-2 text-right font-semibold text-slate-600 text-sm">
+              <div className="col-span-2 text-right font-semibold text-slate-600 text-xs text-slate-700/80">
                 {row.recordsUPM.toLocaleString('pt-BR')}
               </div>
               
-              <div className="col-span-2 text-right font-semibold text-slate-600 text-sm">
+              <div className="col-span-2 text-right font-semibold text-slate-600 text-xs text-slate-700/80">
                 {row.conferredQty.toLocaleString('pt-BR')}
               </div>
               
               <div className="col-span-2 text-right">
-                <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-0.5 inline-block">
+                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100/60 rounded-md px-1.5 py-0.5 inline-block">
                   {row.prodPct}
                 </span>
               </div>
               
               <div className="col-span-2 text-right">
-                <span className="text-xs font-black text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-2 py-0.5 inline-block">
+                <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100/60 rounded-md px-1.5 py-0.5 inline-block">
                   {row.upmPct}
                 </span>
               </div>

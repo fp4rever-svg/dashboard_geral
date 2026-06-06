@@ -148,7 +148,10 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     const [searchQuery, setSearchQuery] = useState('');
     const [isTVMode, setIsTVMode] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
-    const [tvView, setTvView] = useState<'logistics' | 'production' | 'health' | 'avisos'>(forcedView || 'logistics');
+    const [tvView, setTvView] = useState<'logistics' | 'production_charts' | 'production_top5' | 'health' | 'avisos'>(() => {
+        if (forcedView === 'production') return 'production_charts';
+        return (forcedView as any) || 'logistics';
+    });
     
     // Enable wake lock when in TV mode
     useWakeLock(isTVMode);
@@ -163,7 +166,11 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     // Update tvView if forcedView changes (only when NOT in TV Mode)
     useEffect(() => {
         if (forcedView && !isTVMode) {
-            setTvView(forcedView);
+            if (forcedView === 'production') {
+                setTvView('production_charts');
+            } else {
+                setTvView(forcedView as any);
+            }
         }
     }, [forcedView, isTVMode]);
 
@@ -173,12 +180,13 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
 
         const interval = setInterval(() => {
             setTvView(current => {
-                if (current === 'logistics') return 'production';
-                if (current === 'production') return 'health';
+                if (current === 'logistics') return 'production_charts';
+                if (current === 'production_charts') return 'production_top5';
+                if (current === 'production_top5') return 'health';
                 if (current === 'health') return 'avisos';
                 return 'logistics';
             });
-        }, 10000); // 10 seconds per view
+        }, 12000); // 12 seconds per view - beautifully optimized for read rate and loop rhythm
 
         return () => clearInterval(interval);
     }, [isTVMode, isPaused]);
@@ -251,8 +259,8 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                         Logística
                     </button>
                     <button 
-                        onClick={() => setTvView('production')}
-                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${tvView === 'production' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={() => setTvView('production_charts')}
+                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${(tvView === 'production_charts' || tvView === 'production_top5') ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Produção
                     </button>
@@ -389,15 +397,17 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                 </div>
             )}
 
-            {tvView === 'production' && productionData && (
+            {(tvView === 'production_charts' || tvView === 'production_top5') && productionData && (
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     className="space-y-8"
                 >
                     <div className="flex items-center gap-4 mb-4">
                         <div className="h-0.5 flex-1 bg-slate-200"></div>
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Insights de Produção</h3>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">
+                            {tvView === 'production_charts' ? 'Insights de Produção - Tendências Gerais' : 'Insights de Produção - Medalhistas de Performance'}
+                        </h3>
                         <div className="h-0.5 flex-1 bg-slate-200"></div>
                     </div>
                     <ProductionDashboardView 
@@ -406,6 +416,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                         chartData={productionData.chartData}
                         formatValue={productionData.formatValue}
                         otsPadrao={projection.otsPadrao}
+                        forcedSlide={tvView === 'production_charts' ? 0 : 1}
                     />
                 </motion.div>
             )}
@@ -426,53 +437,153 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(59, 130, 246, 0.25)" }}
+                            whileHover={{ scale: 1.01, boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.2)" }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="md:col-span-2 lg:col-span-6 lg:row-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl shadow-blue-500/10 border border-white/5"
+                            className="md:col-span-2 lg:col-span-6 lg:row-span-2 bg-slate-900 rounded-[2rem] p-6 lg:p-7 text-white relative overflow-hidden flex flex-col justify-between shadow-xl border border-white/5"
                         >
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(59,130,246,0.15),transparent_70%)]"></div>
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(59,130,246,0.12),transparent_70%)]"></div>
                             
-                            <div className="relative z-10 flex flex-col items-center text-center">
-                                <div className="flex justify-between items-start w-full">
-                                    <div className="p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10">
-                                        <Activity className="w-8 h-8 text-blue-400" />
+                            {/* Card Content Top Section: Title & Status */}
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
+                                        <Activity className="w-5 h-5 animate-pulse" />
                                     </div>
-                                    <span className="text-[11px] font-black px-4 py-1.5 bg-blue-500/20 text-blue-300 rounded-full uppercase tracking-[0.2em] backdrop-blur-md border border-blue-500/20">LIVE</span>
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 block">Monitoramento</span>
+                                        <h3 className="text-xs font-black text-white leading-tight uppercase tracking-wider">Conclusão Geral</h3>
+                                    </div>
                                 </div>
-                                <div className="mt-6">
-                                    <div className="flex items-baseline gap-3">
-                                        <h3 className="text-7xl font-black tracking-tighter text-white">{filteredCompletion.display.replace('%', '')}<span className="text-3xl text-white/30">%</span></h3>
-                                    </div>
-                                    <p className="text-slate-400 text-sm font-black mt-2 uppercase tracking-[0.2em]">Conclusão Operacional</p>
+                                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest">LIVE</span>
                                 </div>
                             </div>
 
-                            <div className="relative z-10 space-y-8 flex flex-col items-center text-center">
-                                <div className="grid grid-cols-2 gap-8 w-full max-w-sm">
-                                    <div className="space-y-1.5">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Processados</p>
-                                        <p className="text-3xl font-black text-white">{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()}</p>
+                            {/* Dual Pane Main Area */}
+                            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-4 flex-1 items-center">
+                                {/* Left Pane: Stats (columns: 7) */}
+                                <div className="sm:col-span-7 space-y-3.5">
+                                    <div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-5xl font-black tracking-tighter text-white tabular-nums">
+                                                {filteredCompletion.display.replace('%', '')}
+                                            </span>
+                                            <span className="text-xl font-bold text-blue-400/80">%</span>
+                                        </div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">Progresso total ponderado</p>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pendentes</p>
-                                        <p className="text-3xl font-black text-blue-400">{filteredDocsAtuais.toLocaleString()}</p>
+
+                                    {/* Small Grid for sub-stats to reduce spacing */}
+                                    <div className="grid grid-cols-2 gap-3.5 bg-slate-950/40 p-3 rounded-xl border border-white/5">
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Concluídos</p>
+                                            <p className="text-lg font-black text-white tabular-nums">{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Faltantes</p>
+                                            <p className="text-lg font-black text-blue-400 tabular-nums">{filteredDocsAtuais.toLocaleString()}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="w-full max-w-sm flex flex-col items-center gap-2">
-                                    <div className="flex justify-between w-full text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                                        <span>Progresso de Conclusão</span>
-                                        <span>{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()} / {filteredDocsIniciais.toLocaleString()}</span>
+
+                                {/* Right Pane: Interactive Live Visualizer Graph (columns: 5) */}
+                                <div className="sm:col-span-5 flex flex-col items-center justify-center bg-slate-950/30 rounded-2xl p-3 border border-white/5 h-[135px] relative">
+                                    {/* Graph Grid Lines */}
+                                    <div className="absolute inset-x-3 inset-y-4 flex flex-col justify-between pointer-events-none opacity-5">
+                                        <div className="w-full h-px bg-white"></div>
+                                        <div className="w-full h-px bg-white"></div>
+                                        <div className="w-full h-px bg-white"></div>
                                     </div>
-                                    <div className="w-full bg-slate-950/50 h-3 rounded-full overflow-hidden backdrop-blur-md border border-white/5 shadow-inner">
-                                        <motion.div 
-                                            initial={{ width: 0 }}
-                                            animate={{ width: filteredCompletion.display }}
-                                            transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                                            className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 h-full rounded-full shadow-[0_0_20px_rgba(59,130,246,0.7)]"
-                                        >
-                                            <div className="w-full h-full opacity-30 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] bg-[length:20px_20px] animate-pulse"></div>
-                                        </motion.div>
+                                    
+                                    {(() => {
+                                        const sparklinePoints = rows.map(r => getCompletionInfo(r.docsIniciais, r.docsAtuais).percentage);
+                                        const N = sparklinePoints.length || 1;
+                                        const svgWidth = 140;
+                                        const svgHeight = 75;
+                                        const points = sparklinePoints.map((pct, i) => {
+                                            const x = N > 1 ? (i / (N - 1)) * svgWidth : 0;
+                                            const y = svgHeight - (pct / 100) * (svgHeight - 12) - 6;
+                                            return { x, y };
+                                        });
+                                        const linePath = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+                                        const areaPath = points.length > 0 
+                                            ? `${linePath} L ${points[points.length - 1].x} ${svgHeight} L ${points[0].x} ${svgHeight} Z` 
+                                            : '';
+                                        const lastPoint = points[points.length - 1];
+
+                                        return points.length > 0 ? (
+                                            <svg width="100%" height="75" viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="overflow-visible z-10">
+                                                <defs>
+                                                    <linearGradient id="liveGraphGradient" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                                                        <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
+                                                    </linearGradient>
+                                                </defs>
+                                                
+                                                {/* Area under curve */}
+                                                <path d={areaPath} fill="url(#liveGraphGradient)" />
+                                                
+                                                {/* Glowing Line */}
+                                                <motion.path 
+                                                    d={linePath} 
+                                                    fill="none" 
+                                                    stroke="url(#lineGrad)" 
+                                                    strokeWidth="2" 
+                                                    strokeLinecap="round"
+                                                    initial={{ pathLength: 0 }}
+                                                    animate={{ pathLength: 1 }}
+                                                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                                                />
+                                                
+                                                <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                                                    <stop offset="0%" stopColor="#3b82f6" />
+                                                    <stop offset="100%" stopColor="#22d3ee" />
+                                                </linearGradient>
+
+                                                {/* Pulse Dot at Last Point */}
+                                                {lastPoint && (
+                                                    <g>
+                                                        <circle 
+                                                            cx={lastPoint.x} 
+                                                            cy={lastPoint.y} 
+                                                            r="4" 
+                                                            fill="#22d3ee" 
+                                                            className="animate-ping origin-center" 
+                                                            style={{ transformOrigin: `${lastPoint.x}px ${lastPoint.y}px` }} 
+                                                        />
+                                                        <circle cx={lastPoint.x} cy={lastPoint.y} r="3" fill="#ffffff" stroke="#3b82f6" strokeWidth="1.5" />
+                                                    </g>
+                                                )}
+                                            </svg>
+                                        ) : (
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase">Sem rotas ativas</p>
+                                        );
+                                    })()}
+
+                                    <div className="flex justify-between w-full px-1 mt-2 text-[7.5px] font-bold text-slate-500 uppercase tracking-widest z-10">
+                                        <span>Rotas Início</span>
+                                        <span className="text-blue-400">Fluxo Total</span>
+                                        <span>Fim</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Bottom Progress Bar & Label */}
+                            <div className="relative z-10 flex flex-col gap-1.5 mt-2">
+                                <div className="flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    <span>Progresso da Operação</span>
+                                    <span className="text-blue-400 font-bold">{(filteredDocsIniciais - filteredDocsAtuais).toLocaleString()} / {filteredDocsIniciais.toLocaleString()} Caixas</span>
+                                </div>
+                                <div className="w-full bg-slate-950/60 h-2 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: filteredCompletion.display }}
+                                        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                                        className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 h-full rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                    >
+                                        <div className="w-full h-full opacity-30 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] bg-[length:20px_20px] animate-pulse"></div>
+                                    </motion.div>
                                 </div>
                             </div>
                         </motion.div>
@@ -526,42 +637,41 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.9, y: 10 }}
                                                 transition={{ delay: index * 0.01 }}
-                                                className={`bg-white p-5 rounded-2xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60 scale-75' : 'border-slate-200 shadow-sm'} ${row.status === 'Atrasado' ? 'ring-2 ring-red-400 animate-pulse' : ''} hover:border-blue-400 transition-all hover:shadow-2xl group relative cursor-pointer active:scale-95`}
+                                                className={`bg-white p-3.5 rounded-xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60 scale-75' : 'border-slate-200 shadow-sm'} ${row.status === 'Atrasado' ? 'ring-2 ring-red-400 animate-pulse' : ''} hover:border-blue-400 transition-all hover:shadow-xl group relative cursor-pointer active:scale-95`}
                                             >
-                                                <div className="flex justify-between items-start mb-4">
+                                                <div className="flex justify-between items-start mb-2">
                                                     <div className="space-y-0.5">
-                                                        <span className="text-[10px] font-black text-slate-300 group-hover:text-blue-400 transition-colors uppercase tracking-[0.1em]">Rota</span>
-                                                        <h4 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">{row.rotas}</h4>
+                                                        <span className="text-[9px] font-black text-slate-300 group-hover:text-blue-400 transition-colors uppercase tracking-[0.1em]">Rota</span>
+                                                        <h4 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">{row.rotas}</h4>
                                                     </div>
-                                                    <div className={`w-3 h-3 rounded-full shadow-inner ${
+                                                    <div className={`w-2.5 h-2.5 rounded-full shadow-inner ${
                                                         row.status === 'Finalizado' 
-                                                        ? 'bg-emerald-500 ring-4 ring-emerald-50' 
+                                                        ? 'bg-emerald-500 ring-2 ring-emerald-50' 
                                                         : row.status === 'Atrasado' 
-                                                        ? 'bg-red-500 animate-pulse ring-4 ring-red-100'
-                                                        : 'bg-yellow-400 ring-4 ring-yellow-50'
+                                                        ? 'bg-red-500 animate-pulse ring-2 ring-red-100'
+                                                        : 'bg-yellow-400 ring-2 ring-yellow-50'
                                                     }`}></div>
                                                 </div>
 
-                                                <div className="space-y-4">
+                                                <div className="space-y-2.5">
                                                      {/* Documents Stats */}
-                                                     <div className="flex justify-between items-center bg-slate-50/50 p-2 rounded-xl group-hover:bg-blue-50/30 transition-colors">
+                                                     <div className="flex justify-between items-center bg-slate-50/50 p-1.5 rounded-lg group-hover:bg-blue-50/30 transition-colors">
                                                          <div className="text-center flex-1">
-                                                             <p className="text-[8px] font-black text-slate-400 uppercase">Inicial</p>
+                                                             <p className="text-[7.5px] font-black text-slate-400 uppercase">Inicial</p>
                                                              <p className="text-xs font-black text-slate-700">{row.docsIniciais}</p>
                                                          </div>
-                                                         <div className="w-px h-6 bg-slate-200"></div>
+                                                         <div className="w-px h-5 bg-slate-200"></div>
                                                          <div className="text-center flex-1">
-                                                             <p className="text-[8px] font-black text-slate-400 uppercase">FALTANTES</p>
+                                                             <p className="text-[7.5px] font-black text-slate-400 uppercase">Faltantes</p>
                                                              <p className="text-xs font-black text-blue-600">{row.docsAtuais}</p>
                                                          </div>
                                                      </div>
 
-
-                                                 {/* Progress Bar */}
-                                                     <div className="space-y-1.5">
+                                                     {/* Progress Bar */}
+                                                     <div className="space-y-1">
                                                          <div className="flex justify-between items-end">
-                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Conclusão</span>
-                                                             <span className={`text-xs font-black ${completion.percentage >= 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{completion.display}</span>
+                                                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Conclusão</span>
+                                                             <span className={`text-[11px] font-black ${completion.percentage >= 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{completion.display}</span>
                                                          </div>
                                                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                                              <motion.div 
@@ -573,24 +683,24 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                          </div>
                                                      </div>
 
-                                            <div className="flex justify-between items-center pt-3 border-t border-slate-50 mt-2">
-                                                <div className={`flex items-center gap-1.5 text-[10px] font-black tracking-tight ${row.status === 'Atrasado' ? 'text-red-500' : 'text-slate-400'}`}>
-                                                    <Clock className={`w-3.5 h-3.5 ${row.status === 'Atrasado' ? 'text-red-400' : 'text-slate-300'}`} />
-                                                    {row.horarios.substring(0, 5)}
-                                                    {row.status === 'Atrasado' && <span className="ml-1 uppercase text-[8px] px-1 bg-red-100 rounded">Atrasado</span>}
+                                                    <div className="flex justify-between items-center pt-2 border-t border-slate-50 mt-1.5">
+                                                        <div className={`flex items-center gap-1 text-[9px] font-black tracking-tight ${row.status === 'Atrasado' ? 'text-red-500' : 'text-slate-400'}`}>
+                                                            <Clock className={`w-3.5 h-3.5 ${row.status === 'Atrasado' ? 'text-red-400' : 'text-slate-300'}`} />
+                                                            {row.horarios.substring(0, 5)}
+                                                            {row.status === 'Atrasado' && <span className="ml-1 uppercase text-[7px] px-1 bg-red-100 rounded">Atrasado</span>}
+                                                        </div>
+                                                        <div className="p-0.5 px-1.5 bg-slate-50 rounded group-hover:bg-blue-50 transition-colors">
+                                                            <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="p-1 px-2 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                                                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        {row.status === 'Finalizado' && (
-                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] rounded-2xl flex items-center justify-center pointer-events-none">
-                                                <span className="bg-slate-900 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Finalizado</span>
-                                            </div>
-                                        )}
-                                    </motion.div>
+                                                {row.status === 'Finalizado' && (
+                                                    <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] rounded-xl flex items-center justify-center pointer-events-none">
+                                                        <span className="bg-slate-900 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-md">Finalizado</span>
+                                                    </div>
+                                                )}
+                                            </motion.div>
                                 );
                             })}
                             </AnimatePresence>
