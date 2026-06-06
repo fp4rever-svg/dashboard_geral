@@ -2,6 +2,7 @@ import { Package, Clock, Box, LayoutGrid, TrendingUp } from 'lucide-react';
 import { KPICard } from '../dashboard/KPICard';
 import { HourlyTrendChart } from '../dashboard/HourlyTrendChart';
 import { ProductionTrendChart } from '../dashboard/ProductionTrendChart';
+import { TopPerformanceCard } from './TopPerformanceCard';
 import { motion } from 'motion/react';
 
 interface ProductionDashboardViewProps {
@@ -57,6 +58,8 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
           </div>
         </motion.div>
       </div>
+
+      <TopPerformanceCard />
     </div>
   );
 }

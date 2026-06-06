@@ -5,6 +5,7 @@ import { handleFirestoreError, OperationType } from '../../lib/utils';
 import { Save, Clock, TrendingDown, Target, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData';
+import { UserPerformanceManager } from './UserPerformanceManager';
 
 const DEFAULT_DATA: ProjectionData = {
   horaAtual: '05:00:42',
@@ -309,6 +310,8 @@ export function DailyProjectionView() {
               * Fórmulas automáticas baseadas nos valores de entrada
           </div>
       </div>
+
+      <UserPerformanceManager />
     </div>
   );
 }

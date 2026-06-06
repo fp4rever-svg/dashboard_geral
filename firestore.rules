@@ -34,6 +34,9 @@ service cloud.firestore {
     match /production_analytics/{id} {
       allow read, write: if true;
     }
+    match /user_performance/{id} {
+      allow read, write: if true;
+    }
     match /announcements/{id} {
       allow read: if true;
       allow write: if true;

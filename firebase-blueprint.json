@@ -52,9 +52,27 @@
         "active": { "type": "boolean" }
       },
       "required": ["title", "content", "type", "timestamp", "active"]
+    },
+    "UserPerformance": {
+      "title": "User Performance",
+      "description": "Daily performance by work user/operator.",
+      "type": "object",
+      "properties": {
+        "user": { "type": "string" },
+        "recordsUPM": { "type": "number" },
+        "conferredQty": { "type": "number" },
+        "prodPct": { "type": "string" },
+        "upmPct": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["user", "recordsUPM", "conferredQty", "prodPct", "upmPct"]
     }
   },
   "firestore": {
+    "user_performance": {
+      "schema": "UserPerformance",
+      "description": "Top performance lists for operators."
+    },
     "logistics": {
       "schema": "LogisticsData",
       "description": "Logistics data uploaded by users."
