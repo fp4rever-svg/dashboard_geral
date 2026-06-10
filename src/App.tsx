@@ -132,7 +132,19 @@ export default function App() {
   const targetEntry = data.find(item => item.hora === prevHourStr);
   const lastHourACS = targetEntry?.separaACS || '0,00';
 
-  const sortedData = [...data].sort((a, b) => a.hora.localeCompare(b.hora));
+  const sortedData = [...data].sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    const getHourVal = (row: any) => {
+      if (!row || !row.hora) return 0;
+      const parts = row.hora.split(':');
+      if (parts.length === 0) return 0;
+      const h = parseInt(parts[0], 10);
+      return isNaN(h) ? 0 : (h < 12 ? h + 24 : h);
+    };
+    return getHourVal(a) - getHourVal(b);
+  });
   const chartData = sortedData.map(item => {
     const horaStr = item.hora?.substring(0, 5) || '00:00';
     return {

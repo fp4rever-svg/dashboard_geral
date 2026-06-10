@@ -260,7 +260,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
               transition={{ duration: 0.4, ease: "easeInOut" }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-6"
             >
-              <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-sm flex flex-col h-[380px]">
+              <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-sm flex flex-col min-h-[550px]">
                 <h3 className="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
                   <LayoutGrid className="w-5 h-5 text-blue-600" />
                   Tendência de Separação (UNID)
@@ -270,7 +270,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-sm flex flex-col h-[380px]">
+              <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-sm flex flex-col min-h-[550px]">
                 <h3 className="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-emerald-600" />
                   Projeção de Performance (ACS)
