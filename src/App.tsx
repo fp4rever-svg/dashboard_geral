@@ -91,10 +91,22 @@ export default function App() {
   const { data: projectionData } = useProjectionData();
 
   const parseValue = (val: any) => {
+    if (typeof val === 'number') return val;
     if (!val) return 0;
     const str = val.toString().trim();
     if (str === '—' || str === '') return 0;
-    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+    
+    // Check if comma is used as decimal separator
+    const lastDot = str.lastIndexOf('.');
+    const lastComma = str.lastIndexOf(',');
+    
+    if (lastComma > lastDot) {
+        // Treat comma as decimal, remove dots
+        return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+    } else {
+        // Treat dot as decimal, remove commas
+        return parseFloat(str.replace(/,/g, '')) || 0;
+    }
   };
 
   const totals = data.reduce((acc, item) => {
