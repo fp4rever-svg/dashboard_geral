@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProductionDashboardView } from '../dashboard/ProductionDashboardView';
 import { NewsTicker } from '../common/NewsTicker';
+import { DashboardClock } from '../common/DashboardClock';
 import AnnouncementsView from '../views/AnnouncementsView';
 import { useLogisticsData } from '../../hooks/useLogisticsData';
 import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData';
 import { useAbsenteeismData } from '../../hooks/useAbsenteeismData';
 import { useWakeLock } from '../../hooks/useWakeLock';
+import { useNotificationManager } from '../../hooks/useNotificationManager';
+import { NotificationSettingsPanel } from './NotificationSettingsPanel';
 import { 
     Truck, 
     Package, 
@@ -23,7 +26,13 @@ import {
     Minimize2,
     Users,
     Play,
-    Pause
+    Pause,
+    Volume2,
+    VolumeX,
+    Bell,
+    BellOff,
+    Copy,
+    Check
 } from 'lucide-react';
 
 interface LogisticsRow {
@@ -95,9 +104,23 @@ interface LogisticsDashboardViewProps {
 }
 
 export function LogisticsDashboardView({ productionData, forcedView, externalTVMode, selectedRoute = '' }: LogisticsDashboardViewProps) {
-    const { rows, loading: loadingLogistics } = useLogisticsData();
+    const { rows, loading: loadingLogistics, lastUpdated } = useLogisticsData();
     const { data: projection, loading: loadingProjection } = useProjectionData();
     const { totals: absenteeismTotals } = useAbsenteeismData();
+
+    // Hook to manage browser and FCM push notifications
+    const {
+        permission: notificationPermission,
+        notificationsEnabled,
+        fcmStatus,
+        fcmToken,
+        statusMessage,
+        toggleNotifications,
+        requestPermission: requestNotificationPermission,
+        triggerBrowserNotification,
+        triggerDelayedSimulation,
+        recheckFcm
+    } = useNotificationManager();
 
     // Persistent storage for delayed routes
     const [persistentDelayedRoutes, setPersistentDelayedRoutes] = useState<Set<string>>(() => {
@@ -144,6 +167,116 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
         `Faltas na Operação: ${absenteeismTotals.faltas} colaboradores ausentes.`,
         ...(isCritical ? ['⚠️ ALERTA CRÍTICO: Indicações de quebra de meta em indicadores operacionais!'] : [])
     ] : [];
+
+    const playSoftChime = () => {
+        try {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContextClass) return;
+            const ctx = new AudioContextClass();
+            const now = ctx.currentTime;
+
+            // Soft, harmonious pentatonic high-end chime
+            const notes = [659.25, 880, 1109.73, 1318.51];
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                
+                gain.gain.setValueAtTime(0, now + idx * 0.08);
+                gain.gain.linearRampToValueAtTime(0.05, now + idx * 0.08 + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.75);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.85);
+            });
+        } catch (e) {
+            console.error("Browser audio could not play:", e);
+        }
+    };
+
+    const [soundEnabled, setSoundEnabled] = useState(() => {
+        try {
+            const saved = localStorage.getItem('saudeSoundAlert');
+            return saved !== 'false';
+        } catch (_) {
+            return true;
+        }
+    });
+
+    const [alertFlash, setAlertFlash] = useState(false);
+    const prevCriticalStateRef = React.useRef<{
+        isCritical: boolean;
+        comercial: string;
+        operacional: string;
+        upm: number;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!projection) return;
+
+        const comVal = projection.cancelamentoComercial.cenarioAtual;
+        const operVal = projection.cancelamentoOperacional.cenarioAtual;
+        const upmVal = projection.upmEticos.cenarioAtual;
+
+        const isQuebraComercial = parseBrValue(comVal) > parseBrValue(projection.cancelamentoComercial.meta);
+        const isQuebraOperacional = parseBrValue(operVal) > parseBrValue(projection.cancelamentoOperacional.meta);
+        const isQuebraUPM = upmVal > projection.upmEticos.meta;
+        const currentIsCritical = isQuebraComercial || isQuebraOperacional || isQuebraUPM;
+
+        if (prevCriticalStateRef.current !== null) {
+            const prev = prevCriticalStateRef.current;
+            
+            const statusChangedToCritical = !prev.isCritical && currentIsCritical;
+            const valuesChangedInCritical = currentIsCritical && (
+                prev.comercial !== comVal || 
+                prev.operacional !== operVal || 
+                prev.upm !== upmVal
+            );
+
+            if (statusChangedToCritical || valuesChangedInCritical) {
+                setAlertFlash(true);
+                const timer = setTimeout(() => setAlertFlash(false), 5000);
+                
+                if (soundEnabled) {
+                    playSoftChime();
+                }
+
+                // Send browser notifications to alert managers even when tab is out of focus
+                let detailsText = '';
+                if (isQuebraComercial) detailsText += `Comercial (${comVal}) `;
+                if (isQuebraOperacional) detailsText += `Operacional (${operVal}) `;
+                if (isQuebraUPM) detailsText += `UPM (${upmVal})`;
+
+                triggerBrowserNotification(
+                    '⚠️ Alerta Crítico: Saúde da Operação',
+                    `Quebra de meta nos indicadores: ${detailsText.trim()}`
+                );
+
+                return () => clearTimeout(timer);
+            }
+        }
+
+        prevCriticalStateRef.current = {
+            isCritical: currentIsCritical,
+            comercial: comVal,
+            operacional: operVal,
+            upm: upmVal
+        };
+    }, [projection, soundEnabled, triggerBrowserNotification]);
+
+    const toggleSound = () => {
+        const next = !soundEnabled;
+        setSoundEnabled(next);
+        localStorage.setItem('saudeSoundAlert', String(next));
+        if (next) {
+            playSoftChime();
+        }
+    };
     
     const [searchQuery, setSearchQuery] = useState('');
     const [isTVMode, setIsTVMode] = useState(false);
@@ -238,9 +371,15 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
         {/* Header & Controls */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                    {isTVMode ? <div className="p-2 bg-slate-900 rounded-lg text-white"><Activity className="w-5 h-5" /></div> : null}
-                    Logistics Operations {isTVMode && <span className="text-slate-400 font-medium">| TV Insights Mode</span>}
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-e-2 gap-x-3">
+                    {isTVMode ? <div className="p-2 bg-slate-900 rounded-lg text-white"><Activity className="w-5 h-5 animate-pulse" /></div> : null}
+                    <span>Logistics Operations</span>
+                    {isTVMode && (
+                      <span className="flex items-center gap-3.5 text-slate-400 font-bold text-lg md:text-xl">
+                        <span>| TV Insights Mode</span>
+                        <DashboardClock size="tv" className="scale-105" lastSynced={lastUpdated} />
+                      </span>
+                    )}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -300,6 +439,18 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
                         </button>
                     )}
+                    <button
+                        type="button"
+                        onClick={toggleSound}
+                        className={`p-2 rounded-lg border transition-all ${
+                            soundEnabled 
+                                ? 'bg-emerald-50 border-emerald-200/80 text-emerald-600 hover:bg-emerald-100' 
+                                : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
+                        }`}
+                        title={soundEnabled ? "Silenciar Alertas" : "Ativar Alertas Sonoros"}
+                    >
+                        {soundEnabled ? <Volume2 className="w-4 h-4 animate-pulse" /> : <VolumeX className="w-4 h-4" />}
+                    </button>
                     <button 
                         onClick={() => setIsTVMode(!isTVMode)}
                         className="p-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
@@ -319,10 +470,106 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
             {/* Health View Section */}
             {projection && tvView === 'health' && (
                 <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Saúde da Operação</h3>
-                        <div className="h-px w-full bg-slate-200"></div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-1">
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Saúde da Operação</h3>
+                            <div className="h-px w-full bg-slate-250"></div>
+                        </div>
                     </div>
+
+                    <NotificationSettingsPanel
+                      notificationPermission={notificationPermission}
+                      notificationsEnabled={notificationsEnabled}
+                      fcmStatus={fcmStatus}
+                      fcmToken={fcmToken}
+                      statusMessage={statusMessage}
+                      toggleNotifications={toggleNotifications}
+                      requestNotificationPermission={requestNotificationPermission}
+                      triggerDelayedSimulation={triggerDelayedSimulation}
+                      recheckFcm={recheckFcm}
+                    />
+
+                    {/* Alertas Sonoros Status Panel */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-blue-600 to-indigo-500 h-full"></div>
+                      <div className="flex items-center gap-3.5 pl-2">
+                        <div className={`p-3 rounded-2xl flex items-center justify-center transition-colors shadow-inner ${
+                          soundEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          {soundEnabled ? <Volume2 className="w-5.5 h-5.5 animate-pulse" /> : <VolumeX className="w-5.5 h-5.5" />}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
+                            Monitoramento de Alerta Sonoro
+                            {soundEnabled ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest bg-emerald-100 text-emerald-600 uppercase">
+                                <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping" />
+                                Monitoramento Ativo
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 uppercase">
+                                Silenciado
+                              </span>
+                            )}
+                          </h4>
+                          <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-1.5">
+                            {soundEnabled 
+                              ? "Um sino suave tocará sempre que houver quebras de meta críticas nos indicadores de cancelamento ou UPM." 
+                              : "Alertas sonoros desativados. Ative para receber notificações em tempo real no monitor de TV."}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 shrink-0 w-full lg:w-auto justify-end">
+                        <button
+                          type="button"
+                          onClick={toggleSound}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
+                            soundEnabled 
+                              ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600' 
+                              : 'bg-emerald-500 hover:bg-emerald-600 border-transparent text-white shadow-md'
+                          }`}
+                        >
+                          {soundEnabled ? 'Desativar Som' : 'Ativar Alerta Sonoro'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playSoftChime();
+                          }}
+                          className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 transition-colors"
+                        >
+                          Testar Volume
+                        </button>
+                      </div>
+                    </motion.div>
+
+                    {/* Active Critical Update Toast / Flash Banner */}
+                    <AnimatePresence>
+                      {alertFlash && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="bg-red-600 text-white rounded-3xl p-5 shadow-lg shadow-red-500/25 flex items-center justify-between gap-4 animate-pulse"
+                        >
+                          <div className="flex items-center gap-3">
+                            <AlertCircle className="w-6 h-6 shrink-0 text-white" />
+                            <div>
+                              <p className="font-extrabold text-sm uppercase tracking-widest">Atualização Crítica Concluída</p>
+                              <p className="text-xs text-red-100 mt-0.5">Indicadores de Saúde da Operação receberam novas alterações acima da meta!</p>
+                            </div>
+                          </div>
+                          <div className="text-xs font-black uppercase bg-white/20 px-3 py-1.5 rounded-xl border border-white/20 shrink-0">
+                            Alerta Ativo
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

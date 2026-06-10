@@ -19,7 +19,6 @@ import {
   Award,
   RefreshCw
 } from 'lucide-react';
-import { DashboardClock } from '../common/DashboardClock';
 import { KPICard } from '../dashboard/KPICard';
 import { HourlyTrendChart } from '../dashboard/HourlyTrendChart';
 import { ProductionTrendChart } from '../dashboard/ProductionTrendChart';
@@ -203,7 +202,6 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
 
           {/* Right Section: Time Controllers */}
           <div className="relative z-10 flex items-center gap-3">
-            <DashboardClock />
             <button 
               type="button"
               onClick={() => setIsTvActive(!isTvActive)}
@@ -244,7 +242,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
       {/* ALWAYS VISIBLE PRODUCTION CORE KPIS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Total Cubagem ACS" value={formatValue(totals.totalCubagem)} icon={Package} trend="+12,5%" />
-        <KPICard title="SEPARAÇÃO ACESSOS / ULTIMA HORA" value={lastHourACS} icon={Clock} />
+        <KPICard title="SEPARAÇÃO ACESSOS / ULTIMA HORA" value={lastHourACS} icon={LucideClock} />
         <KPICard title="Total Separa.UND" value={formatValue(totals.totalSeparaUND)} icon={Box} status="Ativo" />
         <KPICard title="Total C.Frac.UND" value={formatValue(totals.totalCFracUND)} icon={LayoutGrid} />
       </div>
