@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Package, 
-  Clock, 
-  Box, 
-  LayoutGrid, 
+import {
+  Package,
+  Clock as LucideClock,
+  Box,
+  LayoutGrid,
   TrendingUp, 
   Calendar, 
   Trophy, 
@@ -19,6 +19,7 @@ import {
   Award,
   RefreshCw
 } from 'lucide-react';
+import { DashboardClock } from '../common/DashboardClock';
 import { KPICard } from '../dashboard/KPICard';
 import { HourlyTrendChart } from '../dashboard/HourlyTrendChart';
 import { ProductionTrendChart } from '../dashboard/ProductionTrendChart';
@@ -202,6 +203,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
 
           {/* Right Section: Time Controllers */}
           <div className="relative z-10 flex items-center gap-3">
+            <DashboardClock />
             <button 
               type="button"
               onClick={() => setIsTvActive(!isTvActive)}
