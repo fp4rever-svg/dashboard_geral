@@ -265,7 +265,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                   <LayoutGrid className="w-5 h-5 text-blue-600" />
                   Tendência de Separação (UNID)
                 </h3>
-                <div className="flex-1 min-h-0">
+                <div className="flex-1">
                   <HourlyTrendChart data={chartData} />
                 </div>
               </div>
@@ -275,7 +275,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                   <TrendingUp className="w-5 h-5 text-emerald-600" />
                   Projeção de Performance (ACS)
                 </h3>
-                <div className="flex-1 min-h-0">
+                <div className="flex-1">
                   <ProductionTrendChart data={chartData} target={otsPadrao} />
                 </div>
               </div>

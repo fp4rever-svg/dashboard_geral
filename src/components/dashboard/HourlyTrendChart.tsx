@@ -12,12 +12,16 @@ export function HourlyTrendChart({ data }: HourlyTrendChartProps) {
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
-          <Tooltip />
+          <Tooltip 
+             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+          />
           <Legend verticalAlign="top" height={36}/>
           <ReferenceLine y={2000} label={{ value: "Meta 2000", position: 'top', fill: 'red', fontSize: 10 }} stroke="red" strokeDasharray="3 3" />
+          
           <Bar dataKey="SeparaUND" fill="#006b5f" radius={[4, 4, 0, 0]} name="SEPARAÇÃO UNID.">
             <LabelList dataKey="SeparaUND" position="top" fontSize={10} />
           </Bar>
+          
           <Bar dataKey="CFracUND" fill="#1a2b3c" radius={[4, 4, 0, 0]} name="CONFERÊNCIA UNID.">
             <LabelList dataKey="CFracUND" position="top" fontSize={10} />
           </Bar>

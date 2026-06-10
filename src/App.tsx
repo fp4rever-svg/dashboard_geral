@@ -132,12 +132,16 @@ export default function App() {
   const targetEntry = data.find(item => item.hora === prevHourStr);
   const lastHourACS = targetEntry?.separaACS || '0,00';
 
-  const chartData = data.map(item => ({
-    name: item.hora?.substring(0, 5) || '',
-    SeparaUND: parseValue(item.separaUND),
-    CFracUND: parseValue(item.cFrac),
-    SeparaACS: parseValue(item.separaACS)
-  }));
+  const sortedData = [...data].sort((a, b) => a.hora.localeCompare(b.hora));
+  const chartData = sortedData.map(item => {
+    const horaStr = item.hora?.substring(0, 5) || '00:00';
+    return {
+      name: horaStr,
+      SeparaUND: parseValue(item.separaUND),
+      CFracUND: parseValue(item.cFrac),
+      SeparaACS: parseValue(item.separaACS)
+    };
+  });
 
   const getEffectiveLastUpdated = () => {
     switch (activeTab) {

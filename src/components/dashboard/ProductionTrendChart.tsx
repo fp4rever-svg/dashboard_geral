@@ -39,7 +39,6 @@ export function ProductionTrendChart({ data, target }: ProductionTrendChartProps
     };
   });
 
-  console.log('ProductionTrendChart data:', processedData);
   return (
     <div className="w-full h-full min-h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
