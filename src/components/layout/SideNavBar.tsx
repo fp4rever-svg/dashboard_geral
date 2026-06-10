@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Factory, Truck, BarChart3, FileText, TableProperties, LineChart, Users, HeartPulse, LayoutDashboard, Megaphone, ExternalLink, GripVertical } from 'lucide-react';
+import { Factory, Truck, BarChart3, FileText, TableProperties, LineChart, Users, HeartPulse, LayoutDashboard, Megaphone, ExternalLink, GripVertical, Settings } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -133,6 +133,13 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
                 ))}
               </SortableContext>
             </DndContext>
+            <button 
+              onClick={() => onTabChange('configuracoes')}
+              className={`flex items-center gap-4 rounded-xl px-4 py-3 transition-all mt-1 ${activeTab === 'configuracoes' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-200'}`}
+            >
+              <Settings className="w-5 h-5 animate-spin-slow-hover" />
+              <span className="text-sm font-bold">Configurações</span>
+            </button>
           </nav>
         </div>
       )}

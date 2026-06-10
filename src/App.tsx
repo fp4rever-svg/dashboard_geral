@@ -12,6 +12,7 @@ import { LoginForm } from './components/auth/LoginForm';
 import { ProductionDashboardView } from './components/dashboard/ProductionDashboardView';
 import { DailyProjectionView } from './components/admin/DailyProjectionView';
 import { AbsenteeismManagement } from './components/admin/AbsenteeismManagement';
+import { AdminSettingsView } from './components/admin/AdminSettingsView';
 import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2 } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './lib/utils';
@@ -216,12 +217,14 @@ export default function App() {
                   {activeTab === 'daily_projection' && 'Projeção Diária'}
                   {activeTab === 'absenteismo' && 'Gestão de Absenteísmo'}
                   {activeTab === 'relatorios' && 'Relatórios'}
+                  {activeTab === 'configuracoes' && 'Configurações Globais'}
                 </h1>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'painel' && 'Monitoramento em Tempo Real de Volume.'}
                   {activeTab === 'saude' && 'Monitoramento de indicadores críticos e absenteísmo.'}
                   {activeTab === 'avisos' && 'Atualizações e alertas da equipe operacional.'}
                   {activeTab === 'log_analytics' && 'Visão geral das operações de transporte e retenção.'}
+                  {activeTab === 'configuracoes' && 'Gerencie canais de push e de alertas sonoros desta estação de controle.'}
                 </p>
               </div>
               
@@ -294,6 +297,10 @@ export default function App() {
                  }}
                  selectedRoute={selectedRoute}
                />
+            )}
+
+            {activeTab === 'configuracoes' && isAdmin && (
+              <AdminSettingsView />
             )}
 
             {activeTab === 'avisos' && (

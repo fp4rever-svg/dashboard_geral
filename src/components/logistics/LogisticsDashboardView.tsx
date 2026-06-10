@@ -9,7 +9,6 @@ import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData
 import { useAbsenteeismData } from '../../hooks/useAbsenteeismData';
 import { useWakeLock } from '../../hooks/useWakeLock';
 import { useNotificationManager } from '../../hooks/useNotificationManager';
-import { NotificationSettingsPanel } from './NotificationSettingsPanel';
 import { 
     Truck, 
     Package, 
@@ -476,76 +475,6 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                             <div className="h-px w-full bg-slate-250"></div>
                         </div>
                     </div>
-
-                    <NotificationSettingsPanel
-                      notificationPermission={notificationPermission}
-                      notificationsEnabled={notificationsEnabled}
-                      fcmStatus={fcmStatus}
-                      fcmToken={fcmToken}
-                      statusMessage={statusMessage}
-                      toggleNotifications={toggleNotifications}
-                      requestNotificationPermission={requestNotificationPermission}
-                      triggerDelayedSimulation={triggerDelayedSimulation}
-                      recheckFcm={recheckFcm}
-                    />
-
-                    {/* Alertas Sonoros Status Panel */}
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden"
-                    >
-                      <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-blue-600 to-indigo-500 h-full"></div>
-                      <div className="flex items-center gap-3.5 pl-2">
-                        <div className={`p-3 rounded-2xl flex items-center justify-center transition-colors shadow-inner ${
-                          soundEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                        }`}>
-                          {soundEnabled ? <Volume2 className="w-5.5 h-5.5 animate-pulse" /> : <VolumeX className="w-5.5 h-5.5" />}
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
-                            Monitoramento de Alerta Sonoro
-                            {soundEnabled ? (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest bg-emerald-100 text-emerald-600 uppercase">
-                                <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping" />
-                                Monitoramento Ativo
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest bg-slate-100 text-slate-500 uppercase">
-                                Silenciado
-                              </span>
-                            )}
-                          </h4>
-                          <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-1.5">
-                            {soundEnabled 
-                              ? "Um sino suave tocará sempre que houver quebras de meta críticas nos indicadores de cancelamento ou UPM." 
-                              : "Alertas sonoros desativados. Ative para receber notificações em tempo real no monitor de TV."}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5 shrink-0 w-full lg:w-auto justify-end">
-                        <button
-                          type="button"
-                          onClick={toggleSound}
-                          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
-                            soundEnabled 
-                              ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600' 
-                              : 'bg-emerald-500 hover:bg-emerald-600 border-transparent text-white shadow-md'
-                          }`}
-                        >
-                          {soundEnabled ? 'Desativar Som' : 'Ativar Alerta Sonoro'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playSoftChime();
-                          }}
-                          className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 transition-colors"
-                        >
-                          Testar Volume
-                        </button>
-                      </div>
-                    </motion.div>
 
                     {/* Active Critical Update Toast / Flash Banner */}
                     <AnimatePresence>
