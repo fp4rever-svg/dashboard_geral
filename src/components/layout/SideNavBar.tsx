@@ -12,6 +12,7 @@ interface SideNavBarProps {
 
 const GESTAO_ITEMS_CONFIG: Record<string, { label: string; icon: any, type?: string }> = {
   log_dashboard: { label: 'Log. Tabela', icon: TableProperties },
+  relatorios: { label: 'Gerenciar Produtividade', icon: FileText },
   daily_projection: { label: 'Projeção Diária', icon: LineChart },
   absenteismo: { label: 'Absenteísmo', icon: Users },
   lista_presenca: { label: 'Lista de Presença', icon: ExternalLink, type: 'external' },
@@ -57,6 +58,11 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
+          // Merge to ensure any newly added tabs (like 'relatorios') are appended
+          const missingKeys = initialOrder.filter(key => !parsed.includes(key));
+          if (missingKeys.length > 0) {
+            return [...parsed, ...missingKeys];
+          }
           return parsed;
         }
       } catch (e) {
@@ -118,6 +124,13 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
           >
             <HeartPulse className="w-5 h-5" />
             <span className="text-sm font-bold">Saúde</span>
+          </button>
+          <button 
+            onClick={() => onTabChange('productivity_ops')}
+            className={`flex items-center gap-4 rounded-xl px-4 py-3 transition-all ${activeTab === 'productivity_ops' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-200'}`}
+          >
+            <FileText className="w-5 h-5" />
+            <span className="text-sm font-bold">Produtividade</span>
           </button>
         </nav>
       </div>

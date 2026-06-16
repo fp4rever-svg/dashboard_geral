@@ -13,6 +13,7 @@ import { ProductionDashboardView } from './components/dashboard/ProductionDashbo
 import { DailyProjectionView } from './components/admin/DailyProjectionView';
 import { AbsenteeismManagement } from './components/admin/AbsenteeismManagement';
 import { AdminSettingsView } from './components/admin/AdminSettingsView';
+import { ProductivityReportView } from './components/admin/ProductivityReportView';
 import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2 } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { handleFirestoreError, OperationType, parseValue } from './lib/utils';
@@ -162,7 +163,7 @@ export default function App() {
     );
   }
 
-  const publicTabs = ['log_analytics', 'painel', 'saude', 'avisos'];
+  const publicTabs = ['log_analytics', 'painel', 'saude', 'avisos', 'productivity_ops'];
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden relative">
@@ -197,15 +198,18 @@ export default function App() {
                   {activeTab === 'analytics' && 'Analytics'}
                   {activeTab === 'daily_projection' && 'Projeção Diária'}
                   {activeTab === 'absenteismo' && 'Gestão de Absenteísmo'}
-                  {activeTab === 'relatorios' && 'Relatórios'}
+                  {activeTab === 'relatorios' && 'Controle de Produtividade (Admin)'}
+                  {activeTab === 'productivity_ops' && 'Indicadores de Produtividade'}
                   {activeTab === 'configuracoes' && 'Configurações Globais'}
                 </h1>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'painel' && 'Monitoramento em Tempo Real de Volume.'}
-                  {activeTab === 'saude' && 'Monitoramento de indicadores críticos e absenteísmo.'}
+                  {activeTab === 'saude' && 'Monitoramento de indicators críticos e absenteísmo.'}
                   {activeTab === 'avisos' && 'Atualizações e alertas da equipe operacional.'}
                   {activeTab === 'log_analytics' && 'Visão geral das operações de transporte e retenção.'}
                   {activeTab === 'configuracoes' && 'Gerencie canais de push e de alertas sonoros desta estação de controle.'}
+                  {activeTab === 'relatorios' && 'Carga de relatórios (Excel/CSV) e visualização de tabelas dinâmicas da operação.'}
+                  {activeTab === 'productivity_ops' && 'Visão operacional de cumprimento de metas de produtividade, volumetria horária e rankings.'}
                 </p>
               </div>
               
@@ -282,6 +286,14 @@ export default function App() {
 
             {activeTab === 'configuracoes' && isAdmin && (
               <AdminSettingsView />
+            )}
+
+            {activeTab === 'relatorios' && isAdmin && (
+              <ProductivityReportView isAdmin={true} />
+            )}
+
+            {activeTab === 'productivity_ops' && (
+              <ProductivityReportView isAdmin={false} />
             )}
 
             {activeTab === 'avisos' && (
