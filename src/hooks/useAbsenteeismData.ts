@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/utils';
+import { 
+  getSheetsConfig, 
+  fetchAndParsePublicCsvData, 
+  updateLastSyncedTimestamp 
+} from '../lib/googleSheets';
 
 export interface AbsenteeismRow {
   setor: string;
@@ -25,6 +30,7 @@ export function useAbsenteeismData() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
+    // 1. Set up real-time listener for current database state
     const unsub = onSnapshot(collection(db, 'absenteeism'), (snapshot) => {
       const data: Record<string, any> = {};
       snapshot.forEach(doc => data[doc.id] = doc.data());
@@ -51,7 +57,59 @@ export function useAbsenteeismData() {
       setLoading(false);
     });
 
-    return () => unsub();
+    // 2. Background automatic Google Sheets sync
+    let active = true;
+    async function triggerSilentSync() {
+      try {
+        // Prevent concurrent triggers in the same screen load Session
+        if ((window as any).__sheets_sync_inprogress) {
+          return;
+        }
+        (window as any).__sheets_sync_inprogress = true;
+
+        const config = await getSheetsConfig();
+        if (!config.spreadsheetId) {
+          (window as any).__sheets_sync_inprogress = false;
+          return;
+        }
+
+        // Only auto-sync if has not synced in the last 2 minutes (cooldown throttle)
+        const lastSyncedMs = config.lastSyncedAt ? new Date(config.lastSyncedAt).getTime() : 0;
+        const nowMs = Date.now();
+        if (nowMs - lastSyncedMs < 120000) { 
+          (window as any).__sheets_sync_inprogress = false;
+          return;
+        }
+
+        console.log('Iniciando sincronização automática de presença do Google Sheets...');
+        const result = await fetchAndParsePublicCsvData(config.spreadsheetId, config.sheetName);
+        
+        if (active && result.success && result.data) {
+          // Commit parsed values to Firestore
+          for (const sData of result.data) {
+            const sDocRef = doc(db, 'absenteeism', sData.sector);
+            await setDoc(sDocRef, { 
+              faltas: sData.faltas,
+              total: sData.total,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          }
+          await updateLastSyncedTimestamp();
+          console.log(`Sincronização automática concluída: ${result.message}`);
+        }
+      } catch (err) {
+        console.warn('Erro na sincronização automática em segundo plano:', err);
+      } finally {
+        (window as any).__sheets_sync_inprogress = false;
+      }
+    }
+
+    triggerSilentSync();
+
+    return () => {
+      active = false;
+      unsub();
+    };
   }, []);
 
   const updateRow = async (setor: string, field: 'faltas' | 'total', value: number) => {

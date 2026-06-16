@@ -44,5 +44,8 @@ service cloud.firestore {
     match /config/{id} {
       allow read, write: if true;
     }
+    match /ai_knowledge_base/{id} {
+      allow read, write: if true;
+    }
   }
 }

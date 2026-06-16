@@ -14,6 +14,8 @@ import { DailyProjectionView } from './components/admin/DailyProjectionView';
 import { AbsenteeismManagement } from './components/admin/AbsenteeismManagement';
 import { AdminSettingsView } from './components/admin/AdminSettingsView';
 import { ProductivityReportView } from './components/admin/ProductivityReportView';
+import { AIBaseManagementView } from './components/admin/AIBaseManagementView';
+import FloatingAIAssistant from './components/views/FloatingAIAssistant';
 import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2 } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { handleFirestoreError, OperationType, parseValue } from './lib/utils';
@@ -201,6 +203,8 @@ export default function App() {
                   {activeTab === 'relatorios' && 'Controle de Produtividade (Admin)'}
                   {activeTab === 'productivity_ops' && 'Indicadores de Produtividade'}
                   {activeTab === 'configuracoes' && 'Configurações Globais'}
+                  {activeTab === 'ai_chat' && 'Assistente de IA & Inteligência Coletiva'}
+                  {activeTab === 'ai_admin' && 'Base de Conhecimento (IA)'}
                 </h1>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'painel' && 'Monitoramento em Tempo Real de Volume.'}
@@ -210,6 +214,8 @@ export default function App() {
                   {activeTab === 'configuracoes' && 'Gerencie canais de push e de alertas sonoros desta estação de controle.'}
                   {activeTab === 'relatorios' && 'Carga de relatórios (Excel/CSV) e visualização de tabelas dinâmicas da operação.'}
                   {activeTab === 'productivity_ops' && 'Visão operacional de cumprimento de metas de produtividade, volumetria horária e rankings.'}
+                  {activeTab === 'ai_chat' && 'Esclareça dúvidas sobre metas por hora, regras de layout e procedimentos com inteligência artificial.'}
+                  {activeTab === 'ai_admin' && 'Gerencie, faça upload de PDFs ou digite as regras oficiais para alimentar o assistente de IA.'}
                 </p>
               </div>
               
@@ -300,6 +306,10 @@ export default function App() {
                <AnnouncementsView isAdmin={isAdmin} />
             )}
 
+            {activeTab === 'ai_admin' && isAdmin && (
+              <AIBaseManagementView />
+            )}
+
             {activeTab === 'log_analytics' && (
               <LogisticsDashboardView 
                 forcedView="logistics"
@@ -350,6 +360,9 @@ export default function App() {
           onClose={() => setShowLogin(false)}
         />
       )}
+
+      {/* Floating spiral assistant character active globally */}
+      <FloatingAIAssistant />
     </div>
   );
 }

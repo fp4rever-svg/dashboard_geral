@@ -66,6 +66,20 @@
         "order": { "type": "number" }
       },
       "required": ["user", "recordsUPM", "conferredQty", "prodPct", "upmPct"]
+    },
+    "AiDocument": {
+      "title": "AI Document",
+      "description": "A document uploaded to the operations knowledge base.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "fileName": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "content", "category", "createdAt"]
     }
   },
   "firestore": {
@@ -88,6 +102,10 @@
     "announcements": {
       "schema": "Announcement",
       "description": "Operational announcements and alerts."
+    },
+    "ai_knowledge_base": {
+      "schema": "AiDocument",
+      "description": "Internal knowledge base documents for logistic operations."
     }
   }
 }
