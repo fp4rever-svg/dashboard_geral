@@ -19,10 +19,10 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  // Secure proxy route for Gemini Chat with Knowledge Base context
+  // Secure proxy route for Gemini Chat with Knowledge Base context and Realtime Metrics
   app.post("/api/chat", async (req: express.Request, res: express.Response) => {
     try {
-      const { messages, knowledgeDocuments } = req.body;
+      const { messages, knowledgeDocuments, operationalData } = req.body;
 
       if (!messages || !Array.isArray(messages)) {
         return res.status(400).json({ error: "messages array is required." });
@@ -41,17 +41,50 @@ async function startServer() {
 
       // Build powerful system instruction anchoring operational and guideline data
       let systemInstruction = `Você é o "Assistente de Operações e Inteligência da Logística", um consultor virtual altamente qualificado integrado à central de controle operacional.
-Seu objetivo é ajudar a equipe logística, gerentes, supervisores e operadores de conferência e separação a esclarecer dúvidas operacionais com base nos documentos que eles cadastraram.
+Seu objetivo é ajudar a equipe logística, gerentes, supervisores e operadores de conferência e separação a esclarecer dúvidas operacionais com base nos documentos cadastrados e dados em tempo real da operação.
 
 Diretrizes de resposta:
 1. Responda em português de forma clara, prestativa e estruturada (use markdown com negritos e marcadores se necessário).
-2. Priorize estritamente as regras de negócio escritas nos "Documentos Cadastrados" abaixo.
-3. Se a informação solicitada estiver disponível nos documentos, use-a e cite o título do documento de onde tirou.
-4. Se o usuário perguntar algo que NÃO está contemplado na base fornecida, você pode responder de forma prestativa usando seu conhecimento técnico geral de logística/WMS, mas mencione amigavelmente que aquela instrução específica não consta nos manuais oficiais carregados.
-5. Seja direto, evite floreios ou respostas excessivamente longas desnecessariamente.
+2. Se o usuário solicitar diagnósticos, análises ou informações sobre o absenteísmo operacional, utilize a seção de "DADOS OPERACIONAIS EM TEMPO REAL" abaixo para fazer análises completas, calcular percentuais, alertar sobre setores acima de 5% de absenteísmo e dar conselhos produtivos.
+3. Priorize as regras de negócio escritas nos "Documentos Cadastrados" abaixo quando o usuário perguntar sobre manuais operacionais. Cite o título do manual correspondente se aplicável.
+4. Se o usuário perguntar algo que NÃO está contemplado na base de dados ou manuais, você pode responder usando seu conhecimento de logística e WMS, deixando claro que se trata de uma recomendação geral de mercado.
+5. Seja direto, evite floreios ou respostas excessivamente longas.
 
-Documentos Cadastrados na Base de Conhecimento:
+--- DADOS OPERACIONAIS EM TEMPO REAL (FALTAS E PRESENÇA DE HOJE) ---
 `;
+
+      if (operationalData && Array.isArray(operationalData) && operationalData.length > 0) {
+        systemInstruction += `Os dados abaixo refletem a escala de equipe, faltas e presenças ativas na operação atual (integrados automaticamente da planilha e banco de dados):\n\n`;
+        
+        let totalFaltas = 0;
+        let totalTotal = 0;
+
+        operationalData.forEach((row: any) => {
+          let leader = "Não Definido";
+          if (row.setor === 'Conferencia') leader = 'Lais';
+          else if (row.setor === 'Expedição') leader = 'Renato';
+          else if (row.setor === 'Separação') leader = 'Elisangela';
+          else if (row.setor === 'Controlados') leader = 'Tiago';
+          else if (row.setor === 'Padrão') leader = 'Leticia';
+          else if (row.setor === 'A-frame') leader = 'A-FRAME';
+
+          const faltas = row.faltas || 0;
+          const total = row.total || 0;
+          const pct = total > 0 ? ((faltas / total) * 100).toFixed(2) : "0.00";
+
+          totalFaltas += faltas;
+          totalTotal += total;
+
+          systemInstruction += `- SETOR: ${row.setor} | LÍDER: ${leader} | Faltas: ${faltas} | Total Escalado: ${total} | Absenteísmo: ${pct}%\n`;
+        });
+
+        const generalPct = totalTotal > 0 ? ((totalFaltas / totalTotal) * 100).toFixed(2) : "0.00";
+        systemInstruction += `\n* RESUMO TOTAL OPERACIONAL DE HOJE:\n- Total de Faltas Geral: ${totalFaltas} colaboradores ausentes\n- Total de Efetivo Programado: ${totalTotal} colaboradores escalados\n- Taxa de Absenteísmo Geral da Operação: ${generalPct}% (Alerta de criticidade se estiver acima de 5%)\n\n`;
+      } else {
+        systemInstruction += `Nenhum dado ativo de absenteísmo foi importado ou inserido para o dia atual até o momento.\n\n`;
+      }
+
+      systemInstruction += `\nDocumentos Cadastrados na Base de Conhecimento:\n`;
 
       if (knowledgeDocuments && Array.isArray(knowledgeDocuments) && knowledgeDocuments.length > 0) {
         knowledgeDocuments.forEach((doc: any, index: number) => {
@@ -65,7 +98,7 @@ Documentos Cadastrados na Base de Conhecimento:
           systemInstruction += `\nConteúdo:\n${doc.content}\n-----------------------------\n`;
         });
       } else {
-        systemInstruction += "\n[Atenção]: Nenhum documento ou PDF foi cadastrado pela equipe ainda nesta base de conhecimento. Guie o usuário a acessar a base de conhecimento de administração para carregar os PDFs operacionais correspondentes.\n";
+        systemInstruction += "\n[Atenção]: Nenhum documento ou PDF manual foi cadastrado pela equipe ainda na base de conhecimento.\n";
       }
 
       // Map incoming conversation to Google GenAI schema format

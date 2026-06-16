@@ -50,14 +50,15 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
+  const [absenteeismData, setAbsenteeismData] = useState<any[]>([]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Suggeston templates matching real logistics contexts
+  // Suggeston templates matching real logistics contexts and live data analysis
   const suggestionCards = [
-    { title: "Metas Diárias", prompt: "Qual o padrão de meta de produtividade por hora e por setor operante?" },
-    { title: "Divergência Operacional", prompt: "O que fazer se houver divergência ou erro na conferência de um volume?" },
-    { title: "Tipos de Depósito", prompt: "Como funciona a separação para o Tipo Depósito Fracionado?" },
+    { title: "📊 Análise de Faltas", prompt: "Faça uma análise detalhada sobre o absenteísmo registrado hoje. Quais setores/líderes estão críticos (acima de 5%) e o que recomenda fazer?" },
+    { title: "👤 Líder mais Crítico", prompt: "Qual líder de setor possui a maior taxa de absenteísmo hoje na central de controle?" },
+    { title: "🕒 Regra de Turno", prompt: "Qual o horário limite para virada de turno operacional que o sistema considera nas análises diárias?" },
   ];
 
   // Auto scroll
@@ -73,6 +74,20 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
   useEffect(() => {
     localStorage.setItem("ai_assistant_chat", JSON.stringify(messages));
   }, [messages]);
+
+  // Sync real-time absenteeism data for analytical prompt forwarding
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "absenteeism"), (snapshot) => {
+      const data: any[] = [];
+      snapshot.forEach((doc) => {
+        data.push({ setor: doc.id, ...doc.data() });
+      });
+      setAbsenteeismData(data);
+    }, (err) => {
+      console.warn("Could not sync absenteeism context for AI assistant:", err);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Sync knowledge base doc assets
   useEffect(() => {
@@ -124,7 +139,8 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
         },
         body: JSON.stringify({
           messages: updatedMessages,
-          knowledgeDocuments: documents
+          knowledgeDocuments: documents,
+          operationalData: absenteeismData
         })
       });
 
