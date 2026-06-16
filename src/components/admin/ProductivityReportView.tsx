@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -68,17 +68,87 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
   const [activeSubTab, setActiveSubTab] = useState<'conferencia' | 'separacao'>('conferencia');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // TV Mode state
+  const [tvMode, setTvMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('productivity_tv_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // Matrix and Custom UI mode configurations
   const [viewModeConf, setViewModeConf] = useState<'matrix' | 'list'>('matrix');
   const [viewModeSep, setViewModeSep] = useState<'matrix' | 'list'>('matrix');
-  const [selectedTpDeposConf, setSelectedTpDeposConf] = useState<string[]>([]);
-  const [selectedTpDeposSep, setSelectedTpDeposSep] = useState<string[]>([]);
-  const [selectedHoursConf, setSelectedHoursConf] = useState<string[]>([]);
-  const [selectedHoursSep, setSelectedHoursSep] = useState<string[]>([]);
+  
+  const [selectedTpDeposConf, setSelectedTpDeposConf] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('prod_selected_tp_depos_conf');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedTpDeposSep, setSelectedTpDeposSep] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('prod_selected_tp_depos_sep');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedHoursConf, setSelectedHoursConf] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('prod_selected_hours_conf');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedHoursSep, setSelectedHoursSep] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('prod_selected_hours_sep');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [confMatrixSort, setConfMatrixSort] = useState<'usuario' | 'total'>('usuario');
   const [confMatrixDir, setConfMatrixDir] = useState<'asc' | 'desc'>('asc');
   const [sepMatrixSort, setSepMatrixSort] = useState<'usuario' | 'total'>('usuario');
   const [sepMatrixDir, setSepMatrixDir] = useState<'asc' | 'desc'>('asc');
+
+  // Synchronize TV mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('productivity_tv_mode', String(tvMode));
+  }, [tvMode]);
+
+  // TV mode intervals: switches between Conferencia and Separacao every 10 seconds
+  useEffect(() => {
+    if (!tvMode) return;
+    const interval = setInterval(() => {
+      setActiveSubTab((prev) => (prev === 'conferencia' ? 'separacao' : 'conferencia'));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [tvMode]);
+
+  // Sync selected filters to localStorage
+  useEffect(() => {
+    localStorage.setItem('prod_selected_tp_depos_conf', JSON.stringify(selectedTpDeposConf));
+  }, [selectedTpDeposConf]);
+
+  useEffect(() => {
+    localStorage.setItem('prod_selected_tp_depos_sep', JSON.stringify(selectedTpDeposSep));
+  }, [selectedTpDeposSep]);
+
+  useEffect(() => {
+    localStorage.setItem('prod_selected_hours_conf', JSON.stringify(selectedHoursConf));
+  }, [selectedHoursConf]);
+
+  useEffect(() => {
+    localStorage.setItem('prod_selected_hours_sep', JSON.stringify(selectedHoursSep));
+  }, [selectedHoursSep]);
 
   // Pivot options for Conference
   const [confGroupBy, setConfGroupBy] = useState<string>('colaborador');
@@ -619,6 +689,14 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
       rows = rows.filter(r => r.tpDepos && activeSelectedTpDepos.includes(r.tpDepos.trim()));
     }
 
+    // Filter by hour multi-select (Sync'ed from local state, visible on Admin)
+    const activeSelectedHours = activeSubTab === 'conferencia' ? selectedHoursConf : selectedHoursSep;
+    const setActiveSelectedHours = activeSubTab === 'conferencia' ? setSelectedHoursConf : setSelectedHoursSep;
+
+    if (activeSelectedHours.length > 0) {
+      rows = rows.filter(r => r.hora && activeSelectedHours.includes(r.hora.trim()));
+    }
+
     // Filter by Search Query (matching usuario)
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
@@ -702,24 +780,29 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
       }
     });
 
-    // 5. Build dynamic chips for TpDepós
+    // 5. Build dynamic chips for TpDepós and Hours (from source rows so user can always select them)
     const uniqueTpDeposValuesSet = new Set<string>();
+    const uniqueHoursValuesSet = new Set<string>();
     activeFile.normalizedRows.forEach(r => {
       if (r.tpDepos) {
         const cleaned = r.tpDepos.trim();
         if (cleaned) uniqueTpDeposValuesSet.add(cleaned);
       }
+      if (r.hora) {
+        const cleaned = r.hora.trim();
+        if (cleaned) uniqueHoursValuesSet.add(cleaned);
+      }
     });
     const uniqueTpDeposValues = Array.from(uniqueTpDeposValuesSet).sort();
+    const uniqueHoursValues = Array.from(uniqueHoursValuesSet).sort();
 
     const handleToggleTpDepos = (val: string) => {
       if (activeSelectedTpDepos.length === 0) {
-        // If "Todos" is active, clicking a specific card selects ONLY that card.
         setActiveSelectedTpDepos([val]);
       } else {
         if (activeSelectedTpDepos.includes(val)) {
           const next = activeSelectedTpDepos.filter(item => item !== val);
-          setActiveSelectedTpDepos(next); // If empty, automatically returns to "Todos" mode.
+          setActiveSelectedTpDepos(next);
         } else {
           setActiveSelectedTpDepos([...activeSelectedTpDepos, val]);
         }
@@ -727,66 +810,133 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
     };
 
     const handleSelectAll = () => {
-      setActiveSelectedTpDepos([]); // Reset array to select all
+      setActiveSelectedTpDepos([]);
+    };
+
+    const handleToggleHours = (val: string) => {
+      if (activeSelectedHours.length === 0) {
+        setActiveSelectedHours([val]);
+      } else {
+        if (activeSelectedHours.includes(val)) {
+          const next = activeSelectedHours.filter(item => item !== val);
+          setActiveSelectedHours(next);
+        } else {
+          setActiveSelectedHours([...activeSelectedHours, val]);
+        }
+      }
+    };
+
+    const handleSelectAllHours = () => {
+      setActiveSelectedHours([]);
     };
 
     return (
       <div className="space-y-6">
-        {/* Chips filter bar (matching image TpDepós. but now supporting MULTI-SELECT!) */}
-        <div className="p-5 bg-slate-50 border border-slate-150 rounded-2xl space-y-3.5 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="p-1 px-2.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-[10px] font-black uppercase tracking-wide">
-                Filtro Depósitos (TpDepós) Multi-Seleção
-              </span>
-              <div className="text-xs font-bold text-slate-500">
-                Selecionados:{' '}
-                <span className="bg-blue-100 px-2 text-blue-700 font-extrabold rounded ml-1">
-                  {activeSelectedTpDepos.length === 0 ? 'TODOS' : `${activeSelectedTpDepos.length} depots`}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Chips filter bar (matching image TpDepós. but now supporting MULTI-SELECT!) */}
+          <div className="p-5 bg-slate-50 border border-slate-150 rounded-2xl space-y-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="p-1 px-2.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-[10px] font-black uppercase tracking-wide">
+                  Depósitos (TpDepós)
                 </span>
+                <div className="text-xs font-bold text-slate-500">
+                  <span className="bg-blue-100 px-2 text-blue-700 font-extrabold rounded">
+                    {activeSelectedTpDepos.length === 0 ? 'TODOS' : `${activeSelectedTpDepos.length} depots`}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="text-[10px] text-slate-400 font-bold">
-              Clique em múltiplos botões para acumular filtros. Clique em "Todos" para limpar.
+            
+            <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
+              <button
+                onClick={handleSelectAll}
+                className={`px-3 py-1.5 border text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${
+                  activeSelectedTpDepos.length === 0
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Todos (Limpar)
+              </button>
+              {uniqueTpDeposValues.map(val => {
+                const isSelected = activeSelectedTpDepos.includes(val);
+                return (
+                  <button
+                    key={val}
+                    onClick={() => handleToggleTpDepos(val)}
+                    className={`px-3 py-1.5 border text-[10px] rounded-xl transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm font-black'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
+                    }`}
+                  >
+                    <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-slate-400'}`} />
+                    {val}
+                  </button>
+                );
+              })}
             </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleSelectAll}
-              className={`px-4 py-2 border text-[11px] font-black uppercase tracking-wider rounded-xl transition-all ${
-                activeSelectedTpDepos.length === 0
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm font-black'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Todos (Limpar Filtros)
-            </button>
-            {uniqueTpDeposValues.map(val => {
-              const isSelected = activeSelectedTpDepos.includes(val);
-              return (
-                <button
-                  key={val}
-                  onClick={() => handleToggleTpDepos(val)}
-                  className={`px-4 py-2 border text-[11px] rounded-xl transition-all flex items-center gap-1.5 ${
-                    isSelected
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm font-black'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
-                  }`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-slate-350'}`} />
-                  {val}
-                </button>
-              );
-            })}
+
+            {activeSelectedTpDepos.length > 0 && (
+              <p className="text-[10px] text-slate-450 font-bold tracking-tight italic">
+                Filtrando: <span className="text-blue-600">{activeSelectedTpDepos.join(', ')}</span>
+              </p>
+            )}
           </div>
 
-          {activeSelectedTpDepos.length > 0 && (
-            <p className="text-[10px] text-slate-450 font-bold tracking-tight italic">
-              Filtrando depósitos ativos:{' '}
-              <span className="text-blue-600 font-black">{activeSelectedTpDepos.join(', ')}</span>
-            </p>
-          )}
+          {/* New Hours Filter Bar */}
+          <div className="p-5 bg-slate-50 border border-slate-150 rounded-2xl space-y-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="p-1 px-2.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-[10px] font-black uppercase tracking-wide">
+                  Horário de Lançamento (M)
+                </span>
+                <div className="text-xs font-bold text-slate-500">
+                  <span className="bg-blue-100 px-2 text-blue-700 font-extrabold rounded">
+                    {activeSelectedHours.length === 0 ? 'TODAS HORAS' : `${activeSelectedHours.length} horas`}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
+              <button
+                onClick={handleSelectAllHours}
+                className={`px-3 py-1.5 border text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${
+                  activeSelectedHours.length === 0
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Todas Horas (Limpar)
+              </button>
+              {uniqueHoursValues.map(val => {
+                const isSelected = activeSelectedHours.includes(val);
+                const displayVal = val.length === 8 && val.includes(':') ? val.substring(0, 5) + 'h' : val;
+                return (
+                  <button
+                    key={val}
+                    onClick={() => handleToggleHours(val)}
+                    className={`px-3 py-1.5 border text-[10px] rounded-xl transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm font-black'
+                        : 'bg-white border-slate-200 text-slate-705 hover:bg-slate-105 font-bold'
+                    }`}
+                  >
+                    <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-slate-400'}`} />
+                    {displayVal}
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeSelectedHours.length > 0 && (
+              <p className="text-[10px] text-slate-450 font-bold tracking-tight italic">
+                Filtrando: <span className="text-blue-600">{activeSelectedHours.map(h => h.length === 8 && h.includes(':') ? h.substring(0, 5) + 'h' : h).join(', ')}</span>
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Visual Legend of targets for better guidance */}
@@ -960,7 +1110,19 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               </p>
             </div>
             
-            <div className="flex bg-slate-800/40 p-1 rounded-2xl border border-slate-700 relative z-10">
+            <div className="flex bg-slate-800/40 p-1 rounded-2xl border border-slate-700 relative z-10 flex-wrap gap-2 items-center">
+              <button
+                onClick={() => setTvMode(!tvMode)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 border ${
+                  tvMode 
+                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' 
+                    : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+                }`}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${tvMode ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
+                <span>Modo TV: {tvMode ? 'On' : 'Off'}</span>
+              </button>
+              <div className="h-5 w-px bg-slate-700/60" />
               <button
                 onClick={() => { setActiveSubTab('conferencia'); setSearchQuery(''); }}
                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
@@ -1134,7 +1296,19 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
             </p>
           </div>
 
-          <div className="flex bg-slate-800/60 p-1 rounded-2xl border border-slate-700/50 relative z-10 antialiased font-sans">
+          <div className="flex bg-slate-800/60 p-1 rounded-2xl border border-slate-700/50 relative z-10 antialiased font-sans flex-wrap gap-2 items-center">
+            <button
+              onClick={() => setTvMode(!tvMode)}
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 border ${
+                tvMode 
+                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                  : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+              }`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${tvMode ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
+              <span>Modo TV: {tvMode ? 'Ativo (10s)' : 'Inativo'}</span>
+            </button>
+            <div className="h-5 w-px bg-slate-700/50 hidden md:block" />
             <button
               onClick={() => { setActiveSubTab('conferencia'); setSearchQuery(''); }}
               className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
