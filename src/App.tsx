@@ -15,7 +15,7 @@ import { AbsenteeismManagement } from './components/admin/AbsenteeismManagement'
 import { AdminSettingsView } from './components/admin/AdminSettingsView';
 import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2 } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from './lib/utils';
+import { handleFirestoreError, OperationType, parseValue } from './lib/utils';
 
 const initialData = [
   { hora: '17:00:00', cubagem: '4.577,00', separaACS: '4,00', separaUND: '27,00', cFrac: '—' },
@@ -90,25 +90,6 @@ export default function App() {
   const data = persistentData.length > 0 ? persistentData : initialData;
 
   const { data: projectionData } = useProjectionData();
-
-  const parseValue = (val: any) => {
-    if (typeof val === 'number') return val;
-    if (!val) return 0;
-    const str = val.toString().trim();
-    if (str === '—' || str === '') return 0;
-    
-    // Check if comma is used as decimal separator
-    const lastDot = str.lastIndexOf('.');
-    const lastComma = str.lastIndexOf(',');
-    
-    if (lastComma > lastDot) {
-        // Treat comma as decimal, remove dots
-        return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
-    } else {
-        // Treat dot as decimal, remove commas
-        return parseFloat(str.replace(/,/g, '')) || 0;
-    }
-  };
 
   const totals = data.reduce((acc, item) => {
     acc.totalCubagem += parseValue(item.cubagem);

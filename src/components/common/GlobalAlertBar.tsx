@@ -3,6 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { AlertTriangle, Bell, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { parseValue } from '../../lib/utils';
 
 interface ProjectionData {
   cancelamentoComercial: { meta: string; valor: number; cenarioAtual: string; limite: number };
@@ -28,12 +29,6 @@ export function GlobalAlertBar() {
   }, []);
 
   if (!data) return null;
-
-  // Helper to parse values for comparison
-  const parseValue = (val: string | number) => {
-    if (typeof val === 'number') return val;
-    return parseFloat(val.replace(',', '.').replace('%', '')) || 0;
-  };
 
   const displayVendaTotal = data.resumo1 + data.resumo2;
   const displayConferenciaLinha = data.resumo1;

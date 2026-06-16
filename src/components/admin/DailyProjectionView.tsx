@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { handleFirestoreError, OperationType } from '../../lib/utils';
+import { handleFirestoreError, OperationType, parseValue } from '../../lib/utils';
 import { Save, Clock, TrendingDown, Target, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData';
@@ -106,12 +106,6 @@ export function DailyProjectionView() {
   // Calculated fields for display
   const displayVendaTotal = data.resumo1 + data.resumo2;
   const displayConferenciaLinha = data.resumo1;
-
-  // Helper to parse percentage strings or numbers
-  const parseValue = (val: string | number) => {
-    if (typeof val === 'number') return val;
-    return parseFloat(val.replace(',', '.').replace('%', '')) || 0;
-  };
 
   // Row 1: Cancelamento Comercial
   const metaComercialNum = parseValue(data.cancelamentoComercial.meta) / 100;
