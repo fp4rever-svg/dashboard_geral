@@ -258,19 +258,34 @@ export function AIBaseManagementView() {
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-slate-450 tracking-wider">Upload de Manual / Diretriz</label>
             <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-6 text-center cursor-pointer transition-all hover:bg-slate-50/50 group"
+              onClick={() => extractionProgress === null && fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${
+                extractionProgress !== null 
+                  ? 'border-blue-400 bg-blue-50/20 cursor-wait' 
+                  : 'border-slate-200 hover:border-blue-500 hover:bg-slate-50/50 cursor-pointer'
+              } group`}
             >
               <input 
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
                 accept=".txt,.csv,.pdf"
+                disabled={extractionProgress !== null}
                 onChange={handleFileChange}
               />
-              <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-blue-500 mx-auto mb-2 transition-colors" />
-              <p className="text-xs font-bold text-slate-600 group-hover:text-blue-600">Arraste ou clique para selecionar PDF, TXT ou CSV</p>
-              <p className="text-[10px] text-slate-400 mt-1">Nós iremos transcrever e formatar o conteúdo para você em segundos.</p>
+              {extractionProgress !== null ? (
+                <>
+                  <Loader2 className="w-8 h-8 text-blue-500 mx-auto mb-2 animate-spin" />
+                  <p className="text-xs font-black text-blue-600 uppercase tracking-tight">Processando Documento...</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Extraindo texto, estruturando e indexando em tempo real.</p>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-blue-500 mx-auto mb-2 transition-colors" />
+                  <p className="text-xs font-bold text-slate-600 group-hover:text-blue-600">Arraste ou clique para selecionar PDF, TXT ou CSV</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Nós iremos transcrever e formatar o conteúdo para você em segundos.</p>
+                </>
+              )}
             </div>
           </div>
 

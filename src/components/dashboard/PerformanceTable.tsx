@@ -22,20 +22,30 @@ export function PerformanceTable({ rows, onFileUpload, onRowUpdate }: Performanc
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split('\n');
-      const newData = lines.slice(1).map(line => {
-        const cols = line.split(';');
-        return { 
-          hora: cols[2] || '', 
-          cubagem: cols[3] || '0', 
-          separaACS: cols[4] || '0', 
-          separaUND: cols[5] || '0', 
-          cFrac: cols[6] || '0' 
-        };
-      }).filter(row => row.hora); // Basic filtering
-      onFileUpload(newData);
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n');
+        const newData = lines.slice(1).map(line => {
+          const cols = line.split(';');
+          return { 
+            hora: cols[2] || '', 
+            cubagem: cols[3] || '0', 
+            separaACS: cols[4] || '0', 
+            separaUND: cols[5] || '0', 
+            cFrac: cols[6] || '0' 
+          };
+        }).filter(row => row.hora); // Basic filtering
+        onFileUpload(newData);
+      } catch (err) {
+        console.error("Erro ao processar arquivo:", err);
+      } finally {
+        setLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.onerror = () => {
       setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);
   };
@@ -87,11 +97,12 @@ export function PerformanceTable({ rows, onFileUpload, onRowUpdate }: Performanc
               ref={fileInputRef} 
               type="file" 
               accept=".csv" 
+              disabled={loading}
               onChange={handleFileUpload} 
               className="hidden" 
           />
           <button 
-             onClick={() => fileInputRef.current?.click()}
+             onClick={() => !loading && fileInputRef.current?.click()}
              disabled={loading}
              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >

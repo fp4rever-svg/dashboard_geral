@@ -22,7 +22,8 @@ import {
   Percent,
   Activity,
   Download,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 
 interface NormalizedRow {
@@ -121,6 +122,9 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
   const [confMatrixDir, setConfMatrixDir] = useState<'asc' | 'desc'>('asc');
   const [sepMatrixSort, setSepMatrixSort] = useState<'usuario' | 'total'>('usuario');
   const [sepMatrixDir, setSepMatrixDir] = useState<'asc' | 'desc'>('asc');
+
+  const [isProcessingConf, setIsProcessingConf] = useState(false);
+  const [isProcessingSep, setIsProcessingSep] = useState(false);
 
   // Firestore Synchronization Helpers
   const saveFileToFirestore = async (type: 'conferencia' | 'separacao', file: ParsedFile) => {
@@ -423,60 +427,87 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (type === 'conferencia') {
+      setIsProcessingConf(true);
+    } else {
+      setIsProcessingSep(true);
+    }
+
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
     if (fileExtension === 'csv') {
       Papa.parse(file, {
         header: false,
         skipEmptyLines: true,
-        complete: (results) => {
-          if (results.data && results.data.length > 0) {
-            const rawRows = results.data as any[][];
-            const headers = (rawRows[0] as string[]) || [];
-            
-            // Generate standard schema mapping using raw letters
-            const keyMap = autoDetectColumns(headers);
-            const normalized = normalizeRows(rawRows, headers, type);
+        complete: async (results) => {
+          try {
+            if (results.data && results.data.length > 0) {
+              const rawRows = results.data as any[][];
+              const headers = (rawRows[0] as string[]) || [];
+              
+              // Generate standard schema mapping using raw letters
+              const keyMap = autoDetectColumns(headers);
+              const normalized = normalizeRows(rawRows, headers, type);
 
-            const parsed: ParsedFile = {
-              name: file.name,
-              headers,
-              rows: rawRows,
-              keyMap,
-              normalizedRows: normalized,
-              rowCount: rawRows.length
-            };
+              const parsed: ParsedFile = {
+                name: file.name,
+                headers,
+                rows: rawRows,
+                keyMap,
+                normalizedRows: normalized,
+                rowCount: rawRows.length
+              };
+              if (type === 'conferencia') {
+                setConferenceFile(parsed);
+                await saveFileToFirestore('conferencia', parsed);
+                try {
+                  // Strip the giant raw rows array before persisting to prevent QuotaExceededError and slow JSON parsing
+                  const storageParsed = { ...parsed, rows: [] };
+                  localStorage.setItem('productivity_conf_file', JSON.stringify(storageParsed));
+                } catch (err) {
+                  console.warn("Storage quota limit reached, skipping serialization of full report:", err);
+                }
+              } else {
+                setSeparationFile(parsed);
+                await saveFileToFirestore('separacao', parsed);
+                try {
+                  // Strip the giant raw rows array before persisting
+                  const storageParsed = { ...parsed, rows: [] };
+                  localStorage.setItem('productivity_sep_file', JSON.stringify(storageParsed));
+                } catch (err) {
+                  console.warn("Storage quota limit reached, skipping serialization of full report:", err);
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Error processing CSV contents:", err);
+          } finally {
             if (type === 'conferencia') {
-              setConferenceFile(parsed);
-              saveFileToFirestore('conferencia', parsed);
-              try {
-                // Strip the giant raw rows array before persisting to prevent QuotaExceededError and slow JSON parsing
-                const storageParsed = { ...parsed, rows: [] };
-                localStorage.setItem('productivity_conf_file', JSON.stringify(storageParsed));
-              } catch (err) {
-                console.warn("Storage quota limit reached, skipping serialization of full report:", err);
-              }
+              setIsProcessingConf(false);
             } else {
-              setSeparationFile(parsed);
-              saveFileToFirestore('separacao', parsed);
-              try {
-                // Strip the giant raw rows array before persisting
-                const storageParsed = { ...parsed, rows: [] };
-                localStorage.setItem('productivity_sep_file', JSON.stringify(storageParsed));
-              } catch (err) {
-                console.warn("Storage quota limit reached, skipping serialization of full report:", err);
-              }
+              setIsProcessingSep(false);
+            }
+            if (e.target) {
+              e.target.value = '';
             }
           }
         },
         error: (err) => {
           console.error("Error parsing CSV:", err);
+          if (type === 'conferencia') {
+            setIsProcessingConf(false);
+          } else {
+            setIsProcessingSep(false);
+          }
+          if (e.target) {
+            e.target.value = '';
+          }
         }
       });
     } else {
       // Excel Reader
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
           const bstr = evt.target?.result;
           
@@ -509,7 +540,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
             };
             if (type === 'conferencia') {
               setConferenceFile(parsed);
-              saveFileToFirestore('conferencia', parsed);
+              await saveFileToFirestore('conferencia', parsed);
               try {
                 const storageParsed = { ...parsed, rows: [] };
                 localStorage.setItem('productivity_conf_file', JSON.stringify(storageParsed));
@@ -518,7 +549,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               }
             } else {
               setSeparationFile(parsed);
-              saveFileToFirestore('separacao', parsed);
+              await saveFileToFirestore('separacao', parsed);
               try {
                 const storageParsed = { ...parsed, rows: [] };
                 localStorage.setItem('productivity_sep_file', JSON.stringify(storageParsed));
@@ -529,6 +560,25 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
           }
         } catch (err) {
           console.error("Error parsing Excel:", err);
+        } finally {
+          if (type === 'conferencia') {
+            setIsProcessingConf(false);
+          } else {
+            setIsProcessingSep(false);
+          }
+          if (e.target) {
+            e.target.value = '';
+          }
+        }
+      };
+      reader.onerror = () => {
+        if (type === 'conferencia') {
+          setIsProcessingConf(false);
+        } else {
+          setIsProcessingSep(false);
+        }
+        if (e.target) {
+          e.target.value = '';
         }
       };
       reader.readAsBinaryString(file);
@@ -1860,8 +1910,14 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
             )}
           </div>
 
-          {!conferenceFile ? (
-            <div className="py-8 flex flex-col items-center justify-center text-center cursor-pointer" onClick={() => confInputRef.current?.click()}>
+          {isProcessingConf ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+              <span className="text-xs font-black text-slate-700 uppercase">Processando...</span>
+              <span className="text-[10px] text-slate-400 mt-1 animate-pulse">Lendo dados e sincronizando na nuvem...</span>
+            </div>
+          ) : !conferenceFile ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center cursor-pointer" onClick={() => !isProcessingConf && confInputRef.current?.click()}>
               <Upload className="w-8 h-8 text-slate-400 mb-3" />
               <span className="text-xs font-black text-slate-700 uppercase">Selecione ou arraste o arquivo</span>
               <span className="text-[10px] text-slate-450 mt-1">Formatos suportados: .csv, .xlsx, .xls</span>
@@ -1869,6 +1925,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
                 ref={confInputRef}
                 type="file" 
                 accept=".csv,.xlsx,.xls" 
+                disabled={isProcessingConf}
                 onChange={(e) => handleFileUpload(e, 'conferencia')}
                 className="hidden" 
               />
@@ -1929,8 +1986,14 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
             )}
           </div>
 
-          {!separationFile ? (
-            <div className="py-8 flex flex-col items-center justify-center text-center cursor-pointer" onClick={() => sepInputRef.current?.click()}>
+          {isProcessingSep ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+              <span className="text-xs font-black text-slate-700 uppercase">Processando...</span>
+              <span className="text-[10px] text-slate-400 mt-1 animate-pulse">Lendo dados e sincronizando na nuvem...</span>
+            </div>
+          ) : !separationFile ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center cursor-pointer" onClick={() => !isProcessingSep && sepInputRef.current?.click()}>
               <Upload className="w-8 h-8 text-slate-400 mb-3" />
               <span className="text-xs font-black text-slate-700 uppercase">Selecione ou arraste o arquivo</span>
               <span className="text-[10px] text-slate-450 mt-1">Formatos suportados: .csv, .xlsx, .xls</span>
@@ -1938,6 +2001,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
                 ref={sepInputRef}
                 type="file" 
                 accept=".csv,.xlsx,.xls" 
+                disabled={isProcessingSep}
                 onChange={(e) => handleFileUpload(e, 'separacao')}
                 className="hidden" 
               />

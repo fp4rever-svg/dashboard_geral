@@ -184,18 +184,19 @@ export function UserPerformanceManager() {
             ref={fileInputRef} 
             type="file" 
             accept=".csv" 
+            disabled={importLoading}
             onChange={handleFileUpload} 
             className="hidden" 
           />
 
           <button 
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => !importLoading && fileInputRef.current?.click()}
             disabled={importLoading}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors text-sm font-bold shadow-lg shadow-blue-600/10 disabled:opacity-50"
           >
             {importLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            Importar CSV
+            {importLoading ? "Processando..." : "Importar CSV"}
           </button>
 
           <button 

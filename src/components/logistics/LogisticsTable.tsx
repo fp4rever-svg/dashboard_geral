@@ -222,7 +222,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
                 Modelo CSV
               </button>
               <button 
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !importing && fileInputRef.current?.click()}
                 disabled={importing}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 disabled:opacity-50"
               >
@@ -231,11 +231,12 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
                 ) : (
                   <Upload className="w-4 h-4" />
                 )}
-                Importar CSV
+                {importing ? 'Processando...' : 'Importar CSV'}
               </button>
               <input 
                 type="file" 
                 ref={fileInputRef}
+                disabled={importing}
                 onChange={handleFileUpload}
                 accept=".csv"
                 className="hidden"
