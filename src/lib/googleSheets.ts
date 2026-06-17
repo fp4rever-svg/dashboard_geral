@@ -29,8 +29,13 @@ export async function getSheetsConfig(): Promise<SheetsConfig> {
         autoSyncEnabled: data.autoSyncEnabled !== false
       };
     }
-  } catch (error) {
-    console.error('Error getting Sheets configuration:', error);
+  } catch (error: any) {
+    const errMsg = error?.message || String(error);
+    if (errMsg.includes('offline') || errMsg.includes('network') || errMsg.includes('internet')) {
+      console.warn('Firestore offline: usando configurações padrão locais para sincronização de presença.');
+    } else {
+      console.warn('Erro ao obter configuração do Google Sheets no Firestore:', errMsg);
+    }
   }
   return { 
     spreadsheetId: '1nYm2aRgruykh2YfXTcpCRuHGIqI0TtAFroMEk_p7Ij8', 

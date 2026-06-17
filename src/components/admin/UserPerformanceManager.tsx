@@ -54,15 +54,25 @@ export function UserPerformanceManager() {
           .slice(1) // Skip headers
           .map((line) => {
             // Support both semicolon and comma
-            const cols = line.includes(';') ? line.split(';') : line.split(',');
-            if (cols.length < 2) return null;
+            const rawCols = line.includes(';') ? line.split(';') : line.split(',');
+            if (rawCols.length < 2) return null;
+
+            // Strip prefix/suffix quotes and trim spacing
+            const cols = rawCols.map(col => col.replace(/^["']|["']$/g, '').trim());
+
+            const user = cols[0] || '';
+            // Resiliently strip any non-digit character (like periods, spaces, quotes) to parse clean integers
+            const recordsUPM = parseInt(cols[1]?.replace(/\D/g, '')) || 0;
+            const conferredQty = parseInt(cols[2]?.replace(/\D/g, '')) || 0;
+            const prodPct = cols[3] || '0%';
+            const upmPct = cols[4] || '0%';
 
             return {
-              user: cols[0]?.trim() || '',
-              recordsUPM: parseInt(cols[1]?.replace(/\./g, '').trim()) || 0,
-              conferredQty: parseInt(cols[2]?.replace(/\./g, '').trim()) || 0,
-              prodPct: cols[3]?.trim() || '0%',
-              upmPct: cols[4]?.trim() || '0%',
+              user,
+              recordsUPM,
+              conferredQty,
+              prodPct,
+              upmPct,
             };
           })
           .filter((row): row is UserPerformanceRow => row !== null && row.user !== '');

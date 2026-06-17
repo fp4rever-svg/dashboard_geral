@@ -17,9 +17,19 @@ const loadPdfJs = (): Promise<any> => {
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js";
     script.onload = () => {
-      const pdfjsLib = (window as any)["pdfjs-dist/build/pdf"];
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
-      resolve(pdfjsLib);
+      const pdfjsLib = (window as any).pdfjsLib || (window as any)["pdfjs-dist/build/pdf"];
+      if (!pdfjsLib) {
+        reject(new Error("O motor de PDFJS não pôde ser inicializado no global global (window.pdfjsLib está indefinido)."));
+        return;
+      }
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+        resolve(pdfjsLib);
+      } catch (e: any) {
+        // Fallback if workerSrc cannot be set
+        console.warn("Could not set workersrc directly:", e);
+        resolve(pdfjsLib);
+      }
     };
     script.onerror = () => reject(new Error("Falha ao carregar o motor de PDF do servidor CDN."));
     document.head.appendChild(script);

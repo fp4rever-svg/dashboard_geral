@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -107,7 +107,7 @@ export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, hor
 }
 
 export function useLogisticsData() {
-  const [rows, setRows] = useState<LogisticsRow[]>([]);
+  const [dbData, setDbData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -118,43 +118,40 @@ export function useLogisticsData() {
     return () => clearInterval(timer);
   }, []);
 
+  // Set up Firestore listener ONCE
   useEffect(() => {
-    // Initial state
-    const initialRows = FIXED_DATA.map(r => ({
-      ...r,
-      docsIniciais: 0,
-      docsAtuais: 0,
-      status: 'Pendente'
-    }));
-    setRows(initialRows);
-
     const unsubData = onSnapshot(collection(db, 'logistics_data'), (dataSnapshot) => {
       const customData: Record<string, any> = {};
       dataSnapshot.forEach(doc => customData[doc.id] = doc.data());
-
-      setRows(prevRows => prevRows.map(row => {
-        const custom = customData[row.rotas] || {};
-        const docsIniciais = custom.docsIniciais ?? row.docsIniciais;
-        const docsAtuais = custom.docsAtuais ?? row.docsAtuais;
-        const originalRow = FIXED_DATA.find(fr => fr.rotas === row.rotas);
-        const originalHorarios = originalRow ? originalRow.horarios : row.horarios;
-        
-        return {
-          ...row,
-          docsIniciais,
-          docsAtuais,
-          horarios: adjustHorarioForShift(originalHorarios),
-          status: getAutomaticStatus(docsIniciais, docsAtuais, originalHorarios)
-        } as LogisticsRow;
-      }));
+      setDbData(customData);
       setLoading(false);
       setLastUpdated(new Date());
+    }, (error) => {
+      console.error("Erro ao obter dados de logística do Firestore:", error);
+      setLoading(false);
     });
 
     return () => {
       unsubData();
     };
-  }, [currentTime]); // Re-compute when time changes
+  }, []);
+
+  // Compute rows dynamically on-the-fly whenever dbData or currentTime changes
+  const rows = useMemo(() => {
+    return FIXED_DATA.map(originalRow => {
+      const custom = dbData[originalRow.rotas] || {};
+      const docsIniciais = custom.docsIniciais ?? 0;
+      const docsAtuais = custom.docsAtuais ?? 0;
+
+      return {
+        rotas: originalRow.rotas,
+        docsIniciais,
+        docsAtuais,
+        horarios: adjustHorarioForShift(originalRow.horarios),
+        status: getAutomaticStatus(docsIniciais, docsAtuais, originalRow.horarios)
+      } as LogisticsRow;
+    });
+  }, [dbData, currentTime]);
 
   return { rows, loading, lastUpdated };
 }

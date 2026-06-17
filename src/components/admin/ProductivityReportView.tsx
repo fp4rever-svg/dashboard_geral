@@ -41,6 +41,7 @@ interface ParsedFile {
     setor: string;
   };
   normalizedRows?: NormalizedRow[];
+  rowCount?: number;
 }
 
 interface ProductivityReportViewProps {
@@ -375,21 +376,26 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               headers,
               rows: rawRows,
               keyMap,
-              normalizedRows: normalized
+              normalizedRows: normalized,
+              rowCount: rawRows.length
             };
             if (type === 'conferencia') {
               setConferenceFile(parsed);
               try {
-                localStorage.setItem('productivity_conf_file', JSON.stringify(parsed));
+                // Strip the giant raw rows array before persisting to prevent QuotaExceededError and slow JSON parsing
+                const storageParsed = { ...parsed, rows: [] };
+                localStorage.setItem('productivity_conf_file', JSON.stringify(storageParsed));
               } catch (err) {
-                console.warn(err);
+                console.warn("Storage quota limit reached, skipping serialization of full report:", err);
               }
             } else {
               setSeparationFile(parsed);
               try {
-                localStorage.setItem('productivity_sep_file', JSON.stringify(parsed));
+                // Strip the giant raw rows array before persisting
+                const storageParsed = { ...parsed, rows: [] };
+                localStorage.setItem('productivity_sep_file', JSON.stringify(storageParsed));
               } catch (err) {
-                console.warn(err);
+                console.warn("Storage quota limit reached, skipping serialization of full report:", err);
               }
             }
           }
@@ -429,21 +435,24 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               headers,
               rows: rawRows,
               keyMap,
-              normalizedRows: normalized
+              normalizedRows: normalized,
+              rowCount: rawRows.length
             };
             if (type === 'conferencia') {
               setConferenceFile(parsed);
               try {
-                localStorage.setItem('productivity_conf_file', JSON.stringify(parsed));
+                const storageParsed = { ...parsed, rows: [] };
+                localStorage.setItem('productivity_conf_file', JSON.stringify(storageParsed));
               } catch (err) {
-                console.warn(err);
+                console.warn("Storage quota limit reached, skipping serialization of full report:", err);
               }
             } else {
               setSeparationFile(parsed);
               try {
-                localStorage.setItem('productivity_sep_file', JSON.stringify(parsed));
+                const storageParsed = { ...parsed, rows: [] };
+                localStorage.setItem('productivity_sep_file', JSON.stringify(storageParsed));
               } catch (err) {
-                console.warn(err);
+                console.warn("Storage quota limit reached, skipping serialization of full report:", err);
               }
             }
           }
@@ -1800,7 +1809,9 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               <div className="grid grid-cols-2 gap-3 pt-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <div>
                   <span className="block text-[8px] font-black text-slate-400 uppercase">Registros</span>
-                  <span className="text-sm font-black text-slate-800">{conferenceFile.rows.length} linhas</span>
+                  <span className="text-sm font-black text-slate-800">
+                    {conferenceFile.rowCount || conferenceFile.normalizedRows?.length || conferenceFile.rows?.length || 0} linhas
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[8px] font-black text-slate-400 uppercase">Colunas Mapeadas</span>
@@ -1867,7 +1878,9 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               <div className="grid grid-cols-2 gap-3 pt-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <div>
                   <span className="block text-[8px] font-black text-slate-400 uppercase">Registros</span>
-                  <span className="text-sm font-black text-slate-800">{separationFile.rows.length} linhas</span>
+                  <span className="text-sm font-black text-slate-800">
+                    {separationFile.rowCount || separationFile.normalizedRows?.length || separationFile.rows?.length || 0} linhas
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[8px] font-black text-slate-400 uppercase">Colunas Mapeadas</span>
