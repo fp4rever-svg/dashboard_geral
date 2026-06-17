@@ -3,15 +3,29 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
+import fs from "fs";
 
 // Load environment variables for local testing
 dotenv.config();
+
+// Initialize Firebase on the server
+let db: any = null;
+try {
+  const firebaseConfig = JSON.parse(fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8"));
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app, firebaseConfig.firestoreDatabaseId || "(default)");
+  console.log("Firebase initialized successfully on server.");
+} catch (err) {
+  console.error("Failed to initialize Firebase on server:", err);
+}
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Enable JSON request parsing with high limit for document size
+  // Enable JSON request parsing with high limit
   app.use(express.json({ limit: "15mb" }));
 
   // Health check endpoint
@@ -19,10 +33,10 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  // Secure proxy route for Gemini Chat with Knowledge Base context and Realtime Metrics
+  // Secure proxy route for Gemini Chat with Server-Side context resolution
   app.post("/api/chat", async (req: express.Request, res: express.Response) => {
     try {
-      const { messages, knowledgeDocuments, operationalData } = req.body;
+      const { messages } = req.body;
 
       if (!messages || !Array.isArray(messages)) {
         return res.status(400).json({ error: "messages array is required." });
@@ -34,6 +48,34 @@ async function startServer() {
         return res.status(400).json({ 
           error: "A chave API do Gemini (GEMINI_API_KEY) não está configurada no servidor. Por favor, configure-a nas configurações." 
         });
+      }
+
+      let operationalData: any[] = [];
+      let knowledgeDocuments: any[] = [];
+
+      // Fetch Server-side Context from Firebase if available
+      if (db) {
+        try {
+          // Fetch Absenteism Real-time Data
+          const absSnapshot = await getDocs(collection(db, "absenteeism"));
+          absSnapshot.forEach(doc => {
+            operationalData.push({ setor: doc.id, ...doc.data() });
+          });
+
+          // Fetch Knowledge Base Documents
+          const kbSnapshot = await getDocs(collection(db, "ai_knowledge_base"));
+          kbSnapshot.forEach(doc => {
+            const d = doc.data();
+            knowledgeDocuments.push({
+              title: d.title || "",
+              fileName: d.fileName || "",
+              content: d.content || "",
+              category: d.category || ""
+            });
+          });
+        } catch (fetchErr) {
+          console.warn("⚠️ Failed to fetch live data from Firestore in /api/chat. Will proceed without context. Error:", fetchErr);
+        }
       }
 
       // Initialize Google GenAI client

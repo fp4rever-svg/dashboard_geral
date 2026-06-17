@@ -138,9 +138,7 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: updatedMessages,
-          knowledgeDocuments: documents,
-          operationalData: absenteeismData
+          messages: updatedMessages
         })
       });
 
