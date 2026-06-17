@@ -80,6 +80,31 @@
         "createdAt": { "type": "string" }
       },
       "required": ["title", "content", "category", "createdAt"]
+    },
+    "ProductivityReport": {
+      "title": "Productivity Report",
+      "description": "Consolidated productivity report for conference (conferencia) or separation (separacao).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "headers": { "type": "array" },
+        "keyMap": { "type": "object" },
+        "normalizedRows": { "type": "array" },
+        "rowCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "headers", "keyMap", "normalizedRows", "rowCount", "updatedAt"]
+    },
+    "SheetsConfig": {
+      "title": "Sheets Sync Config",
+      "description": "Configuration metadata for Google Sheets synchronization.",
+      "type": "object",
+      "properties": {
+        "spreadsheetId": { "type": "string" },
+        "sheetName": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["spreadsheetId", "sheetName", "updatedAt"]
     }
   },
   "firestore": {
@@ -106,6 +131,14 @@
     "ai_knowledge_base": {
       "schema": "AiDocument",
       "description": "Internal knowledge base documents for logistic operations."
+    },
+    "productivity_reports": {
+      "schema": "ProductivityReport",
+      "description": "Conference or separation productivity reports."
+    },
+    "sheets_config": {
+      "schema": "SheetsConfig",
+      "description": "Google Sheets synchronization config."
     }
   }
 }
