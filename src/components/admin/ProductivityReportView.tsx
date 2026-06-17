@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
+import { db } from '../../lib/firebase';
+import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { 
   FileSpreadsheet, 
   Upload, 
@@ -119,6 +121,71 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
   const [confMatrixDir, setConfMatrixDir] = useState<'asc' | 'desc'>('asc');
   const [sepMatrixSort, setSepMatrixSort] = useState<'usuario' | 'total'>('usuario');
   const [sepMatrixDir, setSepMatrixDir] = useState<'asc' | 'desc'>('asc');
+
+  // Firestore Synchronization Helpers
+  const saveFileToFirestore = async (type: 'conferencia' | 'separacao', file: ParsedFile) => {
+    try {
+      const docData = {
+        name: file.name,
+        headers: file.headers || [],
+        keyMap: file.keyMap || { colaborador: '', quantidade: '', horaData: '', setor: '' },
+        normalizedRows: file.normalizedRows || [],
+        rowCount: file.rowCount || 0,
+        updatedAt: new Date().toISOString()
+      };
+      await setDoc(doc(db, 'productivity_reports', type), docData);
+    } catch (err) {
+      console.error("Erro ao salvar relatório de produtividade no Firestore:", err);
+    }
+  };
+
+  const deleteFileFromFirestore = async (type: 'conferencia' | 'separacao') => {
+    try {
+      await deleteDoc(doc(db, 'productivity_reports', type));
+    } catch (err) {
+      console.error("Erro ao remover relatório de produtividade no Firestore:", err);
+    }
+  };
+
+  // Live listener to Firestore so both files sync in real-time across devices
+  useEffect(() => {
+    const unsubConf = onSnapshot(doc(db, 'productivity_reports', 'conferencia'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setConferenceFile({
+          name: data.name || '',
+          headers: data.headers || [],
+          rows: [],
+          keyMap: data.keyMap || { colaborador: '', quantidade: '', horaData: '', setor: '' },
+          normalizedRows: data.normalizedRows || [],
+          rowCount: data.rowCount || 0
+        });
+      } else {
+        setConferenceFile(null);
+      }
+    });
+
+    const unsubSep = onSnapshot(doc(db, 'productivity_reports', 'separacao'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setSeparationFile({
+          name: data.name || '',
+          headers: data.headers || [],
+          rows: [],
+          keyMap: data.keyMap || { colaborador: '', quantidade: '', horaData: '', setor: '' },
+          normalizedRows: data.normalizedRows || [],
+          rowCount: data.rowCount || 0
+        });
+      } else {
+        setSeparationFile(null);
+      }
+    });
+
+    return () => {
+      unsubConf();
+      unsubSep();
+    };
+  }, []);
 
   // Synchronize TV mode to localStorage
   useEffect(() => {
@@ -381,6 +448,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
             };
             if (type === 'conferencia') {
               setConferenceFile(parsed);
+              saveFileToFirestore('conferencia', parsed);
               try {
                 // Strip the giant raw rows array before persisting to prevent QuotaExceededError and slow JSON parsing
                 const storageParsed = { ...parsed, rows: [] };
@@ -390,6 +458,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               }
             } else {
               setSeparationFile(parsed);
+              saveFileToFirestore('separacao', parsed);
               try {
                 // Strip the giant raw rows array before persisting
                 const storageParsed = { ...parsed, rows: [] };
@@ -440,6 +509,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
             };
             if (type === 'conferencia') {
               setConferenceFile(parsed);
+              saveFileToFirestore('conferencia', parsed);
               try {
                 const storageParsed = { ...parsed, rows: [] };
                 localStorage.setItem('productivity_conf_file', JSON.stringify(storageParsed));
@@ -448,6 +518,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               }
             } else {
               setSeparationFile(parsed);
+              saveFileToFirestore('separacao', parsed);
               try {
                 const storageParsed = { ...parsed, rows: [] };
                 localStorage.setItem('productivity_sep_file', JSON.stringify(storageParsed));
@@ -467,10 +538,12 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
   const removeFile = (type: 'conferencia' | 'separacao') => {
     if (type === 'conferencia') {
       setConferenceFile(null);
+      deleteFileFromFirestore('conferencia');
       localStorage.removeItem('productivity_conf_file');
       if (confInputRef.current) confInputRef.current.value = '';
     } else {
       setSeparationFile(null);
+      deleteFileFromFirestore('separacao');
       localStorage.removeItem('productivity_sep_file');
       if (sepInputRef.current) sepInputRef.current.value = '';
     }
