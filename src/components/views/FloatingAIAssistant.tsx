@@ -156,25 +156,35 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
         throw new Error(errorMessage);
       }
 
-      if (!response.body) throw new Error("Sem corpo de resposta do servidor.");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
       let fullText = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunkText = decoder.decode(value, { stream: true });
-        fullText += chunkText;
-        setStreamingText(fullText); // Display it progressively
+      if (response.body && typeof response.body.getReader === "function") {
+        try {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunkText = decoder.decode(value, { stream: true });
+            fullText += chunkText;
+            setStreamingText(fullText); // Display it progressively
+          }
+        } catch (streamErr) {
+          console.warn("Streaming read failed, falling back to full text:", streamErr);
+          // Fallback to text reading if stream fails mid-way
+          fullText = await response.text();
+        }
+      } else {
+        // Fallback for environments with standard buffered responses
+        fullText = await response.text();
       }
       
       setStreamingText("");
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: fullText || "Sem resposta compreensível."
+        content: fullText.trim() || "Sem resposta compreensível."
       }]);
     } catch (err: any) {
       console.error("Error calling backend Gemini proxy:", err);

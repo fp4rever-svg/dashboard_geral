@@ -1,57 +1,38 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() { return request.auth != null; }
-
-    // Helpers
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-    function isValidLogistics(data) {
-        return data.rotas is string && data.rotas.size() <= 64 &&
-               data.totalVolume is number &&
-               data.totalQtdRemessa is number &&
-               data.horarios is string && data.horarios.size() <= 20;
+    // Production dashboard collections
+    match /production_analytics/{document} {
+      allow read, write: if true;
+    }
+    match /absenteeism/{document} {
+      allow read, write: if true;
+    }
+    match /logistics_data/{document} {
+      allow read, write: if true;
+    }
+    match /announcements/{document} {
+      allow read, write: if true;
+    }
+    match /user_performance/{document} {
+      allow read, write: if true;
+    }
+    match /ai_knowledge_base/{document} {
+      allow read, write: if true;
+    }
+    match /productivity_reports/{document} {
+      allow read, write: if true;
+    }
+    match /sheets_config/{document} {
+      allow read, write: if true;
+    }
+    match /config/{document} {
+      allow read, write: if true;
     }
 
-    function isValidAbsenteeism(data) {
-        return data.setor is string && data.setor.size() <= 64 &&
-               data.faltas is number &&
-               data.total is number;
-    }
-
+    // Default catch-all
     match /{document=**} {
       allow read, write: if false;
-    }
-
-    match /logistics_status/{rotas} {
-      allow read, write: if true;
-    }
-    match /logistics_data/{rotas} {
-      allow read, write: if true;
-    }
-    match /absenteeism/{setor} {
-      allow read, write: if true;
-    }
-    match /production_analytics/{id} {
-      allow read, write: if true;
-    }
-    match /user_performance/{id} {
-      allow read, write: if true;
-    }
-    match /announcements/{id} {
-      allow read: if true;
-      allow write: if true;
-    }
-    match /config/{id} {
-      allow read, write: if true;
-    }
-    match /ai_knowledge_base/{id} {
-      allow read, write: if true;
-    }
-    match /productivity_reports/{id} {
-      allow read, write: if true;
-    }
-    match /sheets_config/{id} {
-      allow read, write: if true;
     }
   }
 }
