@@ -149,9 +149,9 @@ Diretrizes de resposta:
         parts: [{ text: msg.content }]
       }));
 
-      // Call Gemini 2.5 Flash
+      // Call Gemini 3.5 Flash
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         contents: contents,
         config: {
           systemInstruction: systemInstruction,

@@ -142,11 +142,21 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
         })
       });
 
-      const data = await response.json();
-
+      // Handle non-OK status codes first by inspecting the raw text
       if (!response.ok) {
-        throw new Error(data.error || "Algo deu errado durante a consulta.");
+        const errorText = await response.text();
+        let errorMessage = "Algo deu errado durante a consulta.";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || `Erro no servidor (Código: ${response.status})`;
+        }
+        throw new Error(errorMessage);
       }
+
+      // Safe to parse as JSON now
+      const data = await response.json();
 
       setMessages(prev => [...prev, {
         role: "assistant",
