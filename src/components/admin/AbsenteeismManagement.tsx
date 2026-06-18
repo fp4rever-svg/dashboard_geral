@@ -253,15 +253,15 @@ export function AbsenteeismManagement() {
             <HelpCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p>
-                <strong>Mapeamento de Líderes por Setor:</strong>
+                <strong>Mapeamento por Setor:</strong>
               </p>
               <ul className="list-disc pl-4 space-y-0.5">
-                <li><strong>Conferencia</strong> = Lais</li>
-                <li><strong>Expedição</strong> = Renato</li>
-                <li><strong>Separação</strong> = Elisangela</li>
-                <li><strong>Controlados</strong> = Tiago</li>
-                <li><strong>Padrão</strong> = Leticia</li>
-                <li><strong>A-Frame</strong> = A-FRAME</li>
+                <li><strong>Conferencia</strong></li>
+                <li><strong>Expedição</strong></li>
+                <li><strong>Separação</strong></li>
+                <li><strong>Controlados</strong></li>
+                <li><strong>Padrão</strong></li>
+                <li><strong>A-Frame</strong></li>
               </ul>
               <p className="mt-2 text-[10px] text-emerald-700 font-bold">
                 * Filtra o dia atual considerando a mudança operacional de turno e cai para o registro preenchido mais recente se o dia atual ainda não tiver logs.
@@ -274,28 +274,19 @@ export function AbsenteeismManagement() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Setor / Líder</th>
+                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Setor / Área</th>
                 <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Faltas</th>
-                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Colaboradores</th>
+                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 font-black tracking-normal">Total Colaboradores</th>
                 <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">% Absenteísmo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {rows.map((row) => {
-                let leaderName = '';
-                if (row.setor === 'Conferencia') leaderName = 'Lais';
-                else if (row.setor === 'Expedição') leaderName = 'Renato';
-                else if (row.setor === 'Separação') leaderName = 'Elisangela';
-                else if (row.setor === 'Controlados') leaderName = 'Tiago';
-                else if (row.setor === 'Padrão') leaderName = 'Leticia';
-                else if (row.setor === 'A-frame') leaderName = 'A-FRAME';
-
                 return (
                   <tr key={row.setor} className="hover:bg-slate-50 transition-colors group">
                     <td className="p-4">
                       <div className="flex flex-col">
                         <span className="font-black text-slate-800">{row.setor}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Líder: {leaderName}</span>
                       </div>
                     </td>
                     <td className="p-4">

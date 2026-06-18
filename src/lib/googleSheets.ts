@@ -333,7 +333,7 @@ export async function fetchAndParsePublicCsvData(
     if (sectorColIdx === -1) {
       return { 
         success: false, 
-        message: 'Coluna indicando o Setor/Operador (ou nome do Líder como Lais, Renato, Elisangela) não foi encontrada nos cabeçalhos da planilha.'
+        message: 'Coluna indicando o Setor ou Área não foi encontrada nos cabeçalhos da planilha.'
       };
     }
 
