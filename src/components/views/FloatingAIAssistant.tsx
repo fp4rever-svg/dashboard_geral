@@ -155,19 +155,12 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
         throw new Error(errorMessage);
       }
 
-      // Safe to parse as JSON now
+      // The server now streams back plain text to prevent idle timeouts
       const rawText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (err: any) {
-        console.error("Raw non-JSON response:", rawText);
-        throw new Error(`O servidor retornou uma resposta inválida ou vazia (Tente novamente em alguns instantes).`);
-      }
-
+      
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: data.text || "Sem resposta compreensível."
+        content: rawText || "Sem resposta compreensível."
       }]);
     } catch (err: any) {
       console.error("Error calling backend Gemini proxy:", err);

@@ -153,8 +153,8 @@ Diretrizes de resposta:
         parts: [{ text: msg.content }]
       }));
 
-      // Call Gemini 3.5 Flash
-      const response = await ai.models.generateContent({
+      // Call Gemini 3.5 Flash via Stream to avoid proxy timeouts
+      const responseStream = await ai.models.generateContentStream({
         model: "gemini-3.5-flash",
         contents: contents,
         config: {
@@ -164,9 +164,16 @@ Diretrizes de resposta:
       });
       console.timeEnd("Gemini API Time");
 
-      return res.json({
-        text: response.text || "Sem resposta retornada pelo modelo."
-      });
+      // We will send standard text/plain chunks or just stream JSON. We can just stream plain text and let the frontend gather it.
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Transfer-Encoding", "chunked");
+
+      for await (const chunk of responseStream) {
+        if (chunk.text) {
+          res.write(chunk.text);
+        }
+      }
+      res.end();
     } catch (err: any) {
       console.error("Erro na API Gemini:", err);
       return res.status(500).json({ 
