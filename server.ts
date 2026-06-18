@@ -56,15 +56,16 @@ async function startServer() {
       // Fetch Server-side Context from Firebase if available
       if (db) {
         try {
+          console.time("Firestore Fetch Time");
           // Fetch Absenteism Real-time Data
           const absSnapshot = await getDocs(collection(db, "absenteeism"));
-          absSnapshot.forEach(doc => {
+          absSnapshot.forEach((doc: any) => {
             operationalData.push({ setor: doc.id, ...doc.data() });
           });
 
           // Fetch Knowledge Base Documents
           const kbSnapshot = await getDocs(collection(db, "ai_knowledge_base"));
-          kbSnapshot.forEach(doc => {
+          kbSnapshot.forEach((doc: any) => {
             const d = doc.data();
             knowledgeDocuments.push({
               title: d.title || "",
@@ -73,11 +74,14 @@ async function startServer() {
               category: d.category || ""
             });
           });
+          console.timeEnd("Firestore Fetch Time");
         } catch (fetchErr) {
           console.warn("⚠️ Failed to fetch live data from Firestore in /api/chat. Will proceed without context. Error:", fetchErr);
         }
       }
 
+      console.log(`Starting Gemini API request. System Instruction size: ${knowledgeDocuments.length} docs, Operational data: ${operationalData.length} records.`);
+      console.time("Gemini API Time");
       // Initialize Google GenAI client
       const ai = new GoogleGenAI({ apiKey });
 
@@ -158,6 +162,7 @@ Diretrizes de resposta:
           temperature: 0.25, // Lower temperature reduces hallucination and boosts precision on manual/PDF lookups
         }
       });
+      console.timeEnd("Gemini API Time");
 
       return res.json({
         text: response.text || "Sem resposta retornada pelo modelo."

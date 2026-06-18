@@ -156,7 +156,14 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
       }
 
       // Safe to parse as JSON now
-      const data = await response.json();
+      const rawText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (err: any) {
+        console.error("Raw non-JSON response:", rawText);
+        throw new Error(`O servidor retornou uma resposta inválida ou vazia (Tente novamente em alguns instantes).`);
+      }
 
       setMessages(prev => [...prev, {
         role: "assistant",
