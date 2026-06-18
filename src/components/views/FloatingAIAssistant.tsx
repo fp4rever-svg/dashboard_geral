@@ -46,6 +46,7 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
 
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const [documents, setDocuments] = useState<AIDocument[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -155,12 +156,25 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
         throw new Error(errorMessage);
       }
 
-      // The server now streams back plain text to prevent idle timeouts
-      const rawText = await response.text();
+      if (!response.body) throw new Error("Sem corpo de resposta do servidor.");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunkText = decoder.decode(value, { stream: true });
+        fullText += chunkText;
+        setStreamingText(fullText); // Display it progressively
+      }
       
+      setStreamingText("");
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: rawText || "Sem resposta compreensível."
+        content: fullText || "Sem resposta compreensível."
       }]);
     } catch (err: any) {
       console.error("Error calling backend Gemini proxy:", err);
@@ -413,13 +427,35 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
               })}
 
               {loading && (
-                <div className="flex gap-2.5 max-w-[85%] mr-auto">
+                <div className="flex gap-2.5 max-w-[88%] mr-auto">
                   <div className="p-2 rounded-xl bg-blue-600 border border-blue-500 text-white shrink-0 h-8 w-8 flex items-center justify-center">
                     <Bot className="w-4 h-4 text-amber-300 animate-spin" />
                   </div>
-                  <div className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                    <span className="text-[10px] font-bold tracking-tight uppercase">Consultando regras...</span>
+                  <div className="p-3 bg-white border border-slate-200 text-slate-850 rounded-2xl rounded-tl-none shadow-sm flex flex-col gap-2 font-medium text-xs leading-relaxed">
+                    {streamingText ? (
+                      streamingText.split("\n").map((para, i) => {
+                        if (!para.trim()) return <div key={i} className="h-1.5" />;
+                        
+                        let renderedText: React.ReactNode = para;
+                        if (para.includes("**")) {
+                          const parts = para.split("**");
+                          renderedText = parts.map((part, idx) => (
+                            idx % 2 === 1 ? <strong key={idx} className="font-extrabold text-blue-600">{part}</strong> : part
+                          ));
+                        }
+
+                        return (
+                          <p key={i} className="whitespace-pre-line tracking-wide">
+                            {renderedText}
+                          </p>
+                        );
+                      })
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                        <span className="text-[10px] font-bold tracking-tight uppercase text-slate-400">Consultando regras...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
