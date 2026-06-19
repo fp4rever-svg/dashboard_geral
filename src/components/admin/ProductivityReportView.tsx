@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { db } from '../../lib/firebase';
-import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, onSnapshot, getDoc, getDocs, collection } from 'firebase/firestore';
 import { 
   FileSpreadsheet, 
   Upload, 
@@ -129,15 +129,47 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
   // Firestore Synchronization Helpers
   const saveFileToFirestore = async (type: 'conferencia' | 'separacao', file: ParsedFile) => {
     try {
+      const mainDocRef = doc(db, 'productivity_reports', type);
+      const mainDocSnap = await getDoc(mainDocRef);
+      let prevChunkCount = 0;
+      if (mainDocSnap.exists()) {
+        prevChunkCount = mainDocSnap.data().chunkCount || 0;
+      }
+
+      const normalizedRows = file.normalizedRows || [];
+      const CHUNK_SIZE = 1500;
+      const chunks: NormalizedRow[][] = [];
+      
+      for (let i = 0; i < normalizedRows.length; i += CHUNK_SIZE) {
+        chunks.push(normalizedRows.slice(i, i + CHUNK_SIZE));
+      }
+
+      // Write chunks
+      const chunkPromises = chunks.map((chunkData, index) => {
+        const chunkRef = doc(db, 'productivity_reports', type, 'chunks', 'chunk_' + index);
+        return setDoc(chunkRef, { rows: chunkData });
+      });
+      await Promise.all(chunkPromises);
+
+      // Clean up leftover old chunks if previous chunkCount was higher
+      if (prevChunkCount > chunks.length) {
+        const deletePromises = [];
+        for (let i = chunks.length; i < prevChunkCount; i++) {
+          deletePromises.push(deleteDoc(doc(db, 'productivity_reports', type, 'chunks', 'chunk_' + i)));
+        }
+        await Promise.all(deletePromises);
+      }
+
+      // Save main/metadata document
       const docData = {
         name: file.name,
         headers: file.headers || [],
         keyMap: file.keyMap || { colaborador: '', quantidade: '', horaData: '', setor: '' },
-        normalizedRows: file.normalizedRows || [],
         rowCount: file.rowCount || 0,
+        chunkCount: chunks.length,
         updatedAt: new Date().toISOString()
       };
-      await setDoc(doc(db, 'productivity_reports', type), docData);
+      await setDoc(mainDocRef, docData);
     } catch (err) {
       console.error("Erro ao salvar relatório de produtividade no Firestore:", err);
     }
@@ -145,7 +177,17 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
 
   const deleteFileFromFirestore = async (type: 'conferencia' | 'separacao') => {
     try {
-      await deleteDoc(doc(db, 'productivity_reports', type));
+      const mainDocRef = doc(db, 'productivity_reports', type);
+      const mainDocSnap = await getDoc(mainDocRef);
+      if (mainDocSnap.exists()) {
+        const chunkCount = mainDocSnap.data().chunkCount || 0;
+        const deletePromises = [];
+        for (let i = 0; i < chunkCount; i++) {
+          deletePromises.push(deleteDoc(doc(db, 'productivity_reports', type, 'chunks', 'chunk_' + i)));
+        }
+        await Promise.all(deletePromises);
+      }
+      await deleteDoc(mainDocRef);
     } catch (err) {
       console.error("Erro ao remover relatório de produtividade no Firestore:", err);
     }
@@ -153,15 +195,40 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
 
   // Live listener to Firestore so both files sync in real-time across devices
   useEffect(() => {
-    const unsubConf = onSnapshot(doc(db, 'productivity_reports', 'conferencia'), (docSnap) => {
+    const unsubConf = onSnapshot(doc(db, 'productivity_reports', 'conferencia'), async (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        const chunkCount = data.chunkCount || 0;
+        let allRows: NormalizedRow[] = [];
+
+        if (chunkCount > 0) {
+          try {
+            const promises = [];
+            for (let i = 0; i < chunkCount; i++) {
+              promises.push(getDoc(doc(db, 'productivity_reports', 'conferencia', 'chunks', 'chunk_' + i)));
+            }
+            const snaps = await Promise.all(promises);
+            snaps.forEach(snap => {
+              if (snap.exists()) {
+                const snapData = snap.data();
+                if (snapData && Array.isArray(snapData.rows)) {
+                  allRows.push(...snapData.rows);
+                }
+              }
+            });
+          } catch (err) {
+            console.error("Erro ao recuperar chunks de conferência:", err);
+          }
+        } else if (data.normalizedRows) {
+          allRows = data.normalizedRows;
+        }
+
         setConferenceFile({
           name: data.name || '',
           headers: data.headers || [],
           rows: [],
           keyMap: data.keyMap || { colaborador: '', quantidade: '', horaData: '', setor: '' },
-          normalizedRows: data.normalizedRows || [],
+          normalizedRows: allRows,
           rowCount: data.rowCount || 0
         });
       } else {
@@ -169,15 +236,40 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
       }
     });
 
-    const unsubSep = onSnapshot(doc(db, 'productivity_reports', 'separacao'), (docSnap) => {
+    const unsubSep = onSnapshot(doc(db, 'productivity_reports', 'separacao'), async (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        const chunkCount = data.chunkCount || 0;
+        let allRows: NormalizedRow[] = [];
+
+        if (chunkCount > 0) {
+          try {
+            const promises = [];
+            for (let i = 0; i < chunkCount; i++) {
+              promises.push(getDoc(doc(db, 'productivity_reports', 'separacao', 'chunks', 'chunk_' + i)));
+            }
+            const snaps = await Promise.all(promises);
+            snaps.forEach(snap => {
+              if (snap.exists()) {
+                const snapData = snap.data();
+                if (snapData && Array.isArray(snapData.rows)) {
+                  allRows.push(...snapData.rows);
+                }
+              }
+            });
+          } catch (err) {
+            console.error("Erro ao recuperar chunks de separação:", err);
+          }
+        } else if (data.normalizedRows) {
+          allRows = data.normalizedRows;
+        }
+
         setSeparationFile({
           name: data.name || '',
           headers: data.headers || [],
           rows: [],
           keyMap: data.keyMap || { colaborador: '', quantidade: '', horaData: '', setor: '' },
-          normalizedRows: data.normalizedRows || [],
+          normalizedRows: allRows,
           rowCount: data.rowCount || 0
         });
       } else {

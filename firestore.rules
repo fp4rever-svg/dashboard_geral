@@ -23,6 +23,9 @@ service cloud.firestore {
     match /productivity_reports/{document} {
       allow read, write: if true;
     }
+    match /productivity_reports/{document}/chunks/{chunk} {
+      allow read, write: if true;
+    }
     match /sheets_config/{document} {
       allow read, write: if true;
     }
