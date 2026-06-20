@@ -43,10 +43,46 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
   const { period, data: rawPerformanceData, loading: userPerformanceLoading } = useUserPerformance();
 
   // Carousel & TV Loop States
-  const [isTvActive, setIsTvActive] = useState(true);
+  const [isTvActive, setIsTvActive] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('production_tv_mode_active');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
   const [internalSlide, setInternalSlide] = useState(0); // 0: Charts, 1: Immersive Ranking
-  const [loopInterval, setLoopInterval] = useState(15000); // 15 seconds default
+  const [loopInterval, setLoopInterval] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('production_tv_mode_interval');
+      return saved ? parseInt(saved, 10) : 15000;
+    } catch {
+      return 15000;
+    }
+  });
   const [remainingTime, setRemainingTime] = useState(loopInterval);
+
+  // Sync state with localStorage and other tabs
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const savedActive = localStorage.getItem('production_tv_mode_active');
+        if (savedActive !== null) {
+          setIsTvActive(savedActive === 'true');
+        }
+        const savedInterval = localStorage.getItem('production_tv_mode_interval');
+        if (savedInterval) {
+          const val = parseInt(savedInterval, 10);
+          setLoopInterval(val);
+          setRemainingTime(val);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -204,7 +240,11 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
           <div className="relative z-10 flex items-center gap-3">
             <button 
               type="button"
-              onClick={() => setIsTvActive(!isTvActive)}
+              onClick={() => {
+                const newValue = !isTvActive;
+                setIsTvActive(newValue);
+                localStorage.setItem('production_tv_mode_active', String(newValue));
+              }}
               className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-white hover:text-blue-400 transition-colors flex items-center justify-center cursor-pointer shadow-md"
               title={isTvActive ? "Pausar Loop" : "Iniciar Loop Automático"}
             >
@@ -218,6 +258,7 @@ export function ProductionDashboardView({ totals, lastHourACS, chartData, format
                   onClick={() => {
                     setLoopInterval(ms);
                     setRemainingTime(ms);
+                    localStorage.setItem('production_tv_mode_interval', String(ms));
                   }}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-black cursor-pointer uppercase transition-all ${
                     loopInterval === ms 

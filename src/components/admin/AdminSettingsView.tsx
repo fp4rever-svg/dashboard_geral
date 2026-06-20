@@ -13,7 +13,12 @@ import {
   Volume1,
   Sparkles,
   Clock,
-  Tv
+  Tv,
+  Play,
+  Pause,
+  TrendingUp,
+  Activity,
+  CheckSquare
 } from 'lucide-react';
 
 interface AdminSettingsProps {
@@ -43,12 +48,75 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
     }
   });
 
+  // Carousel Desempenho Operacional States
+  const [productionTvModeActive, setProductionTvModeActive] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('production_tv_mode_active');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [productionTvModeInterval, setProductionTvModeInterval] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('production_tv_mode_interval');
+      return saved ? parseInt(saved, 10) : 15000;
+    } catch {
+      return 15000;
+    }
+  });
+
+  // Dashboard de Produtividade States
+  const [productivityTvMode, setProductivityTvMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('productivity_tv_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [productivityTvModeInterval, setProductivityTvModeInterval] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('productivity_tv_mode_interval');
+      return saved ? parseInt(saved, 10) : 10000;
+    } catch {
+      return 10000;
+    }
+  });
+
   const [testSuccess, setTestSuccess] = useState(false);
 
   const toggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
     localStorage.setItem('saudeSoundAlert', String(next));
+  };
+
+  const toggleProductionTvMode = () => {
+    const next = !productionTvModeActive;
+    setProductionTvModeActive(next);
+    localStorage.setItem('production_tv_mode_active', String(next));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleProductionIntervalChange = (val: number) => {
+    setProductionTvModeInterval(val);
+    localStorage.setItem('production_tv_mode_interval', String(val));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const toggleProductivityTvMode = () => {
+    const next = !productivityTvMode;
+    setProductivityTvMode(next);
+    localStorage.setItem('productivity_tv_mode', String(next));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleProductivityIntervalChange = (val: number) => {
+    setProductivityTvModeInterval(val);
+    localStorage.setItem('productivity_tv_mode_interval', String(val));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const playSoftChime = () => {
@@ -210,49 +278,144 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
         </div>
 
         {/* 3. TV Mode Rotation Setup Panel */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-150 shadow-sm space-y-4">
+        <div className="bg-white p-6 rounded-3xl border border-slate-150 shadow-sm space-y-6">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
             <Tv className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Intervalo de Rotação do Modo TV</h3>
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Configuração Avançada do Modo TV</h3>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-150 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-indigo-500 to-violet-500 h-full" />
-            
-            <div className="flex items-center gap-3.5 pl-2">
-              <div className="p-3 rounded-2xl flex items-center justify-center bg-indigo-50/80 text-indigo-600 border border-indigo-100 shadow-inner shrink-0">
-                <Clock className="w-5.5 h-5.5" />
+          <div className="grid grid-cols-1 gap-6">
+            {/* 3.1 Transição Geral de Painéis */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-150 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-indigo-500 to-violet-500 h-full" />
+              
+              <div className="flex items-center gap-3.5 pl-2">
+                <div className="p-3 rounded-2xl flex items-center justify-center bg-indigo-50/80 text-indigo-600 border border-indigo-100 shadow-inner shrink-0">
+                  <Clock className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
+                    Rotação Geral entre Painéis de Operações
+                  </h4>
+                  <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-2 max-w-lg leading-relaxed">
+                    Define o tempo de permanência em cada aba principal (Logística, Produção, Presença, Produtividade, Avisos) antes de avançar para a próxima quando maximizado.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
-                  Tempo de Transição entre Painéis
-                </h4>
-                <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-2 max-w-lg leading-relaxed">
-                  Defina o intervalo de tempo para alternar automaticamente entre os painéis de operações enquanto o painel estiver rodando em Modo TV nas telas industriais do CD.
-                </p>
+              
+              <div className="w-full lg:w-64 shrink-0">
+                <select
+                  value={tvModeInterval}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (setTvModeInterval) {
+                      setTvModeInterval(val);
+                    }
+                    localStorage.setItem('tv_mode_rotation_interval', String(val));
+                    window.dispatchEvent(new Event('storage'));
+                  }}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value={10000}>10 segundos</option>
+                  <option value={15000}>15 segundos</option>
+                  <option value={20000}>20 segundos</option>
+                  <option value={30000}>30 segundos</option>
+                  <option value={60000}>1 minuto</option>
+                  <option value={300000}>5 minutos</option>
+                </select>
               </div>
             </div>
-            
-            <div className="w-full lg:w-64 shrink-0">
-              <select
-                value={tvModeInterval}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (setTvModeInterval) {
-                    setTvModeInterval(val);
-                  }
-                  localStorage.setItem('tv_mode_rotation_interval', String(val));
-                }}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value={10000}>10 segundos</option>
-                <option value={15000}>15 segundos</option>
-                <option value={20000}>20 segundos</option>
-                <option value={25000}>25 segundos</option>
-                <option value={30000}>30 segundos</option>
-                <option value={60000}>1 minuto</option>
-                <option value={300000}>5 minutos</option>
-              </select>
+
+            {/* 3.2 Desempenho Operacional (Gráficos vs. Top 5 Performance) */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-150 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-amber-500 to-orange-500 h-full" />
+              
+              <div className="flex items-center gap-3.5 pl-2 w-full lg:w-auto">
+                <div className="p-3 rounded-2xl flex items-center justify-center bg-amber-50/80 text-amber-600 border border-amber-100 shadow-inner shrink-0">
+                  <TrendingUp className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
+                    Desempenho Operacional: Gráficos vs. Top 5 Performance
+                  </h4>
+                  <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-2 max-w-lg leading-relaxed">
+                    Intervalo de troca automática de tela e controle de atividade na aba "Desempenho Operacional" (entre Gráficos Gerais e Rankings TOP 5).
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 w-full lg:w-64 shrink-0">
+                <button
+                  type="button"
+                  onClick={toggleProductionTvMode}
+                  className={`p-3 rounded-xl border text-xs font-black transition-all flex items-center justify-center cursor-pointer ${
+                    productionTvModeActive 
+                      ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' 
+                      : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
+                  }`}
+                  title={productionTvModeActive ? "Pausar Alternância" : "Iniciar Alternância"}
+                >
+                  {productionTvModeActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                </button>
+                <select
+                  value={productionTvModeInterval}
+                  onChange={(e) => handleProductionIntervalChange(parseInt(e.target.value, 10))}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value={5000}>5 segundos</option>
+                  <option value={10000}>10 segundos</option>
+                  <option value={15000}>15 segundos</option>
+                  <option value={20000}>20 segundos</option>
+                  <option value={30000}>30 segundos</option>
+                  <option value={60000}>1 minuto</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 3.3 Dashboard de Produtividade (CONFERENCIA E SEPARAÇÃO) */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-150 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 h-full" />
+              
+              <div className="flex items-center gap-3.5 pl-2 w-full lg:w-auto">
+                <div className="p-3 rounded-2xl flex items-center justify-center bg-blue-50/80 text-blue-600 border border-blue-100 shadow-inner shrink-0">
+                  <Activity className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
+                    Dashboard de Produtividade: Conferência vs. Separação
+                  </h4>
+                  <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-2 max-w-lg leading-relaxed">
+                    Intervalo de troca automática e controle de reprodução no "Painel de Produtividade" (entre as visões de Conferência e Separação).
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 w-full lg:w-64 shrink-0">
+                <button
+                  type="button"
+                  onClick={toggleProductivityTvMode}
+                  className={`p-3 rounded-xl border text-xs font-black transition-all flex items-center justify-center cursor-pointer ${
+                    productivityTvMode 
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' 
+                      : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
+                  }`}
+                  title={productivityTvMode ? "Pausar Alternância" : "Iniciar Alternância"}
+                >
+                  {productivityTvMode ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                </button>
+                <select
+                  value={productivityTvModeInterval}
+                  onChange={(e) => handleProductivityIntervalChange(parseInt(e.target.value, 10))}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value={5000}>5 segundos</option>
+                  <option value={10000}>10 segundos</option>
+                  <option value={15000}>15 segundos</option>
+                  <option value={20000}>20 segundos</option>
+                  <option value={30000}>30 segundos</option>
+                  <option value={60000}>1 minuto</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

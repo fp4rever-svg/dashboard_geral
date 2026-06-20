@@ -81,6 +81,35 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
     }
   });
 
+  const [tvInterval, setTvInterval] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('productivity_tv_mode_interval');
+      return saved ? parseInt(saved, 10) : 10000; // default 10 seconds
+    } catch {
+      return 10000;
+    }
+  });
+
+  // Support Storage synchronization from Configs
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const savedActive = localStorage.getItem('productivity_tv_mode');
+        if (savedActive !== null) {
+          setTvMode(savedActive === 'true');
+        }
+        const savedInterval = localStorage.getItem('productivity_tv_mode_interval');
+        if (savedInterval) {
+          setTvInterval(parseInt(savedInterval, 10));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // Matrix and Custom UI mode configurations
   const [viewModeConf, setViewModeConf] = useState<'matrix' | 'list'>('matrix');
   const [viewModeSep, setViewModeSep] = useState<'matrix' | 'list'>('matrix');
@@ -288,14 +317,14 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
     localStorage.setItem('productivity_tv_mode', String(tvMode));
   }, [tvMode]);
 
-  // TV mode intervals: switches between Conferencia and Separacao every 10 seconds
+  // TV mode intervals: switches between Conferencia and Separacao every tvInterval
   useEffect(() => {
     if (!tvMode) return;
     const interval = setInterval(() => {
       setActiveSubTab((prev) => (prev === 'conferencia' ? 'separacao' : 'conferencia'));
-    }, 10000);
+    }, tvInterval);
     return () => clearInterval(interval);
-  }, [tvMode]);
+  }, [tvMode, tvInterval]);
 
   // Sync selected filters to localStorage
   useEffect(() => {
@@ -1344,7 +1373,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
                 }`}
               >
                 <div className={`w-1.5 h-1.5 rounded-full ${tvMode ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
-                <span>Modo TV: {tvMode ? 'On' : 'Off'}</span>
+                <span>Modo TV: {tvMode ? `On (${tvInterval / 1000}s)` : 'Off'}</span>
               </button>
               <div className="h-5 w-px bg-slate-700/60" />
               <button
@@ -1530,7 +1559,7 @@ export function ProductivityReportView({ isAdmin = false }: ProductivityReportVi
               }`}
             >
               <div className={`w-1.5 h-1.5 rounded-full ${tvMode ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
-              <span>Modo TV: {tvMode ? 'Ativo (10s)' : 'Inativo'}</span>
+              <span>Modo TV: {tvMode ? `Ativo (${tvInterval / 1000}s)` : 'Inativo'}</span>
             </button>
             <div className="h-5 w-px bg-slate-700/50 hidden md:block" />
             <button
