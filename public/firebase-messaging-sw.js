@@ -2,14 +2,14 @@
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js');
 
-// Standard initialization to ensure registration initializes without failing on empty keys
+// Real initialization using actual Firebase Config
 firebase.initializeApp({
-  apiKey: "placeholder-api-key",
-  authDomain: "placeholder-auth-domain",
-  projectId: "placeholder-project-id",
-  storageBucket: "placeholder-storage-bucket",
-  messagingSenderId: "placeholder-sender-id",
-  appId: "placeholder-app-id"
+  apiKey: "AIzaSyD-hmnx3yMOaY9FeF9rNKmhMYkI3Y7qtKc",
+  authDomain: "generated-envoy-q07pf.firebaseapp.com",
+  projectId: "generated-envoy-q07pf",
+  storageBucket: "generated-envoy-q07pf.firebasestorage.app",
+  messagingSenderId: "964751365274",
+  appId: "1:964751365274:web:74683f7d0d14b2154e7b23"
 });
 
 const messaging = firebase.messaging();

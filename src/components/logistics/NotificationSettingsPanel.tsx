@@ -189,14 +189,14 @@ export function NotificationSettingsPanel({
                 <button
                   type="button"
                   onClick={handleSimulate}
-                  disabled={!notificationsEnabled || notificationPermission !== 'granted'}
+                  disabled={!notificationsEnabled}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-400 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.98]"
                 >
                   <Play className="w-4 h-4" />
                   Testar Alerta de 3 Segundos
                 </button>
                 <p className="text-[10px] text-slate-400 text-center font-bold">
-                  {!notificationsEnabled ? '⚠️ Habilite os alertas acima para testar' : 'Dica: Minimize ou mude de aba após clicar!'}
+                  {!notificationsEnabled ? '⚠️ Habilite os alertas acima para testar' : 'Dica: Clique para testar! (Simulador Ativo)'}
                 </p>
               </div>
             </div>

@@ -4,6 +4,63 @@ import { getToken, onMessage } from 'firebase/messaging';
 
 export type FCMStatusType = 'idle' | 'checking' | 'active' | 'denied' | 'iframe_blocked' | 'unsupported' | 'error';
 
+const showDynamicInAppToast = (title: string, body: string) => {
+  if (typeof document === 'undefined') return;
+  
+  let container = document.getElementById('in-app-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'in-app-toast-container';
+    container.className = 'fixed top-4 right-4 z-[99999] flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4';
+    document.body.appendChild(container);
+  }
+
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = 'bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto flex items-start gap-4 transition-all duration-300 transform translate-x-12 opacity-0 font-sans';
+  
+  toast.innerHTML = `
+    <div class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl shrink-0 mt-0.5 border border-indigo-500/10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center justify-between gap-2">
+        <h5 class="text-[10px] font-black uppercase tracking-widest text-indigo-300">Notificação Push (Mock / Tab)</h5>
+        <button class="text-slate-400 hover:text-white transition-colors cursor-pointer inline-flex p-0.5 rounded-lg hover:bg-white/10" onclick="this.parentElement.parentElement.parentElement.remove()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <p class="text-xs font-black text-white mt-1 leading-snug">${title}</p>
+      <p class="text-[11px] text-slate-300 font-bold mt-1 leading-tight">${body}</p>
+      <div class="mt-3 flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Canal Ativo</span>
+        <span class="h-1 w-1 bg-slate-600 rounded-full"></span>
+        <span>Gateway FCM</span>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(toast);
+
+  // Trigger animation after next tick
+  setTimeout(() => {
+    toast.className = 'bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto flex items-start gap-4 transition-all duration-300 transform translate-x-0 opacity-100 font-sans';
+  }, 50);
+
+  // Auto-remove after 6 seconds
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.className = 'bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto flex items-start gap-4 transition-all duration-300 transform translate-x-12 opacity-0 font-sans';
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, 300);
+    }
+  }, 6000);
+};
+
 export function useNotificationManager() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [fcmStatus, setFcmStatus] = useState<FCMStatusType>('idle');
@@ -155,9 +212,13 @@ export function useNotificationManager() {
 
   // Core helper to trigger native browser notification (especially useful in background/out of focus)
   const triggerBrowserNotification = (title: string, body: string, force: boolean = false) => {
+    if (!notificationsEnabled) return;
+
+    // Always trigger the in-app floating Toast (as a beautiful fallback, especially for iframe sandbox)
+    showDynamicInAppToast(title, body);
+
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
-    if (!notificationsEnabled) return;
 
     // Standard behavior: alert when tab is hidden, or if forced (for demonstration tests)
     if (document.hidden || force) {
@@ -183,13 +244,8 @@ export function useNotificationManager() {
 
   // Simulated background push sender (runs with 3-second delay, so managers can minimize and test)
   const triggerDelayedSimulation = (title: string, body: string, delayMs: number = 3000) => {
-    if (!('Notification' in window)) {
-      alert('Seu navegador não suporta notificações de desktop.');
-      return;
-    }
-    if (Notification.permission !== 'granted') {
-      requestNotificationPermission();
-      return;
+    if (!notificationsEnabled) {
+      toggleNotifications();
     }
 
     setTimeout(() => {

@@ -11,10 +11,17 @@ import {
   ShieldCheck, 
   HelpCircle,
   Volume1,
-  Sparkles
+  Sparkles,
+  Clock,
+  Tv
 } from 'lucide-react';
 
-export function AdminSettingsView() {
+interface AdminSettingsProps {
+  tvModeInterval?: number;
+  setTvModeInterval?: (interval: number) => void;
+}
+
+export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }: AdminSettingsProps) {
   const {
     permission: notificationPermission,
     notificationsEnabled,
@@ -198,6 +205,54 @@ export function AdminSettingsView() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. TV Mode Rotation Setup Panel */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-150 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Tv className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Intervalo de Rotação do Modo TV</h3>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-150 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-indigo-500 to-violet-500 h-full" />
+            
+            <div className="flex items-center gap-3.5 pl-2">
+              <div className="p-3 rounded-2xl flex items-center justify-center bg-indigo-50/80 text-indigo-600 border border-indigo-100 shadow-inner shrink-0">
+                <Clock className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 leading-none flex flex-wrap items-center gap-2">
+                  Tempo de Transição entre Painéis
+                </h4>
+                <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-2 max-w-lg leading-relaxed">
+                  Defina o intervalo de tempo para alternar automaticamente entre os painéis de operações enquanto o painel estiver rodando em Modo TV nas telas industriais do CD.
+                </p>
+              </div>
+            </div>
+            
+            <div className="w-full lg:w-64 shrink-0">
+              <select
+                value={tvModeInterval}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (setTvModeInterval) {
+                    setTvModeInterval(val);
+                  }
+                  localStorage.setItem('tv_mode_rotation_interval', String(val));
+                }}
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value={10000}>10 segundos</option>
+                <option value={15000}>15 segundos</option>
+                <option value={20000}>20 segundos</option>
+                <option value={25000}>25 segundos</option>
+                <option value={30000}>30 segundos</option>
+                <option value={60000}>1 minuto</option>
+                <option value={300000}>5 minutos</option>
+              </select>
             </div>
           </div>
         </div>

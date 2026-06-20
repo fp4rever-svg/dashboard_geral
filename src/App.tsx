@@ -16,7 +16,7 @@ import { AdminSettingsView } from './components/admin/AdminSettingsView';
 import { ProductivityReportView } from './components/admin/ProductivityReportView';
 import { AIBaseManagementView } from './components/admin/AIBaseManagementView';
 import FloatingAIAssistant from './components/views/FloatingAIAssistant';
-import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2 } from 'lucide-react';
+import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2, Tv } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { handleFirestoreError, OperationType, parseValue } from './lib/utils';
 
@@ -56,6 +56,10 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [isGenericAdmin, setIsGenericAdmin] = useState(() => localStorage.getItem('isGenericAdmin') === 'true');
   const [selectedRoute, setSelectedRoute] = useState<string>('');
+  const [tvModeInterval, setTvModeInterval] = useState<number>(() => {
+    const saved = localStorage.getItem('tv_mode_rotation_interval');
+    return saved ? parseInt(saved, 10) : 15000; // default 15 seconds
+  });
 
   const ADMIN_EMAIL = 'fp4rever@gmail.com';
 
@@ -66,6 +70,29 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Efeito para alternância automática das abas de Operações no Modo TV (com intervalo customizado)
+  useEffect(() => {
+    if (!isMaximized) return;
+
+    const rotatableTabs = ['log_analytics', 'painel', 'saude', 'productivity_ops', 'avisos'];
+    
+    // Se estiver em uma aba que não faz parte das abas rotacionáveis de Operações,
+    // redefine imediatamente para a primeira aba da lista.
+    if (!rotatableTabs.includes(activeTab)) {
+      setActiveTab('log_analytics');
+    }
+
+    const interval = setInterval(() => {
+      setActiveTab((current) => {
+        const currentIndex = rotatableTabs.indexOf(current);
+        const nextIndex = (currentIndex === -1 ? 0 : currentIndex + 1) % rotatableTabs.length;
+        return rotatableTabs[nextIndex];
+      });
+    }, tvModeInterval); // Alternar visualização a cada tvModeInterval milissegundos
+
+    return () => clearInterval(interval);
+  }, [isMaximized, activeTab, tvModeInterval]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -226,14 +253,6 @@ export default function App() {
                     onUpdateLastUpdated={updateLastUpdated}
                   />
                   
-                  <button 
-                    onClick={() => setIsMaximized(true)}
-                    className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition-colors"
-                    title="Maximizar visualização"
-                  >
-                    <Maximize className="w-5 h-5" />
-                  </button>
-                  
                   {isAdmin && (
                     <button 
                       onClick={handleLogout}
@@ -291,7 +310,10 @@ export default function App() {
             )}
 
             {activeTab === 'configuracoes' && isAdmin && (
-              <AdminSettingsView />
+              <AdminSettingsView 
+                tvModeInterval={tvModeInterval}
+                setTvModeInterval={setTvModeInterval}
+              />
             )}
 
             {activeTab === 'relatorios' && isAdmin && (
@@ -341,18 +363,21 @@ export default function App() {
         </main>
       </div>
 
-      {isMaximized && (
-        <button 
-          onClick={() => setIsMaximized(false)}
-          className="fixed bottom-8 right-8 z-50 p-4 bg-slate-900 text-white rounded-full shadow-2xl hover:scale-110 transition-transform active:scale-95 group"
-          title="Sair do modo tela cheia"
+      {/* Central fixed TV Mode button at the top */}
+      <div className="fixed top-2.5 left-1/2 -translate-x-1/2 z-[150] flex items-center justify-center">
+        <button
+          onClick={() => setIsMaximized(!isMaximized)}
+          className={`group flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.12em] transition-all duration-300 shadow-md hover:shadow-xl border cursor-pointer ${
+            isMaximized 
+              ? 'bg-rose-600 border-rose-500 hover:bg-rose-500 text-white shadow-rose-900/20' 
+              : 'bg-slate-900 border-slate-950 hover:bg-slate-800 text-white shadow-slate-900/10'
+          }`}
+          title={isMaximized ? "Sair do Modo TV" : "Ativar Modo TV"}
         >
-          <Minimize2 className="w-6 h-6" />
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Sair do modo tela cheia
-          </span>
+          <Tv className={`w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 ${isMaximized ? 'animate-pulse' : ''}`} />
+          <span>{isMaximized ? 'Sair do Modo TV' : 'Modo TV'}</span>
         </button>
-      )}
+      </div>
 
       {showLogin && (
         <LoginForm 
@@ -361,8 +386,8 @@ export default function App() {
         />
       )}
 
-      {/* Floating spiral assistant character active globally */}
-      <FloatingAIAssistant />
+      {/* Floating spiral assistant character active only for Admins */}
+      {isAdmin && <FloatingAIAssistant />}
     </div>
   );
 }

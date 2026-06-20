@@ -4,7 +4,7 @@ import { ProductionDashboardView } from '../dashboard/ProductionDashboardView';
 import { NewsTicker } from '../common/NewsTicker';
 import { DashboardClock } from '../common/DashboardClock';
 import AnnouncementsView from '../views/AnnouncementsView';
-import { useLogisticsData } from '../../hooks/useLogisticsData';
+import { useLogisticsData, isRealTimeDelayed } from '../../hooks/useLogisticsData';
 import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData';
 import { useAbsenteeismData } from '../../hooks/useAbsenteeismData';
 import { useWakeLock } from '../../hooks/useWakeLock';
@@ -308,7 +308,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
 
     // TV Mode Rotation Effect
     useEffect(() => {
-        if (!isTVMode || isPaused) return;
+        if (!isTVMode || isPaused || forcedView) return;
 
         const interval = setInterval(() => {
             setTvView(current => {
@@ -321,7 +321,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
         }, 12000); // 12 seconds per view - beautifully optimized for read rate and loop rhythm
 
         return () => clearInterval(interval);
-    }, [isTVMode, isPaused]);
+    }, [isTVMode, isPaused, forcedView]);
 
     const loading = loadingLogistics || loadingProjection;
     
@@ -449,13 +449,6 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                         title={soundEnabled ? "Silenciar Alertas" : "Ativar Alertas Sonoros"}
                     >
                         {soundEnabled ? <Volume2 className="w-4 h-4 animate-pulse" /> : <VolumeX className="w-4 h-4" />}
-                    </button>
-                    <button 
-                        onClick={() => setIsTVMode(!isTVMode)}
-                        className="p-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-                        title={isTVMode ? "Sair do Modo TV" : "Modo TV"}
-                    >
-                        {isTVMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
                     <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors">
                         <Filter className="w-4 h-4" />
@@ -859,13 +852,23 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                          </div>
                                                      </div>
 
-                                                    <div className="flex justify-between items-center pt-2 border-t border-slate-50 mt-1.5">
-                                                        <div className={`flex items-center gap-1 text-[9px] font-black tracking-tight ${row.status === 'Atrasado' ? 'text-red-500' : 'text-slate-400'}`}>
-                                                            <Clock className={`w-3.5 h-3.5 ${row.status === 'Atrasado' ? 'text-red-400' : 'text-slate-300'}`} />
-                                                            {row.horarios.substring(0, 5)}
-                                                            {row.status === 'Atrasado' && <span className="ml-1 uppercase text-[7px] px-1 bg-red-100 rounded">Atrasado</span>}
+                                                    <div className="flex justify-between items-center pt-2 border-t border-slate-100 mt-1.5 flex-wrap gap-1">
+                                                        <div className={`flex flex-col gap-0.5 text-[9px] font-black tracking-tight min-w-0 ${row.status === 'Atrasado' ? 'text-red-500' : 'text-slate-400'}`}>
+                                                            <div className="flex items-center gap-1">
+                                                                <Clock className={`w-3.5 h-3.5 ${row.status === 'Atrasado' ? 'text-red-400' : 'text-slate-300'}`} />
+                                                                <span>Prog: {row.horarios.substring(0, 5)}</span>
+                                                            </div>
+                                                            {row.horarioReal && (
+                                                                <div className={`flex items-center gap-1 mt-0.5 ${isRealTimeDelayed(row.horarioReal, row.horarios) ? 'text-rose-600 font-extrabold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100' : 'text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100'}`}>
+                                                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                                                                    <span>Real: {row.horarioReal.substring(0, 5)}</span>
+                                                                    {isRealTimeDelayed(row.horarioReal, row.horarios) && (
+                                                                        <span className="text-[7.5px] font-black uppercase text-rose-700 bg-rose-200/50 px-1 rounded-md leading-none">Atraso</span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div className="p-0.5 px-1.5 bg-slate-50 rounded group-hover:bg-blue-50 transition-colors">
+                                                        <div className="p-0.5 px-1.5 bg-slate-50 rounded group-hover:bg-blue-50 transition-colors shrink-0">
                                                             <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
                                                         </div>
                                                     </div>

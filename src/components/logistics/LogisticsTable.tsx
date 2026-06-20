@@ -3,7 +3,7 @@ import { doc, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/utils';
 import { Upload, Download, FileSpreadsheet, AlertTriangle, X } from 'lucide-react';
-import { useLogisticsData, LogisticsRow } from '../../hooks/useLogisticsData';
+import { useLogisticsData, LogisticsRow, isRealTimeDelayed } from '../../hooks/useLogisticsData';
 import { useAppMetadata } from '../../hooks/useAppMetadata';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -62,13 +62,17 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
       onRouteSelect(e.target.value);
   };
  
-  const handleInputChange = (rotas: string, field: 'docsIniciais' | 'docsAtuais', value: string) => {
+  const handleInputChange = (rotas: string, field: 'docsIniciais' | 'docsAtuais' | 'horarioReal', value: string) => {
       if (!isAdmin) return;
-      const numericValue = parseInt(value) || 0;
-      setRows(rows.map(r => r.rotas === rotas ? { ...r, [field]: numericValue } : r));
+      if (field === 'horarioReal') {
+          setRows(rows.map(r => r.rotas === rotas ? { ...r, horarioReal: value } : r));
+      } else {
+          const numericValue = parseInt(value) || 0;
+          setRows(rows.map(r => r.rotas === rotas ? { ...r, [field]: numericValue } : r));
+      }
   };
 
-  const handleSaveField = async (rotas: string, field: 'docsIniciais' | 'docsAtuais') => {
+  const handleSaveField = async (rotas: string, field: 'docsIniciais' | 'docsAtuais' | 'horarioReal') => {
     if (!isAdmin) return;
     const row = rows.find(r => r.rotas === rotas);
     if (!row) return;
@@ -120,7 +124,10 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
               continue;
           }
 
-          const [rawRota, rawInicial, rawAtual] = parts;
+          const rawRota = parts[0];
+          const rawInicial = parts[1];
+          const rawAtual = parts[2];
+          const rawReal = parts[3] || ''; // optional 4th column for actual departure time
           
           // Normalize rota: 0731 -> 731
           const normalizedRota = rawRota.replace(/^0+/, '') || rawRota;
@@ -139,7 +146,11 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
             const docsAtuais = parseDocCount(rawAtual);
             
             const docRef = doc(db, 'logistics_data', normalizedRota);
-            batch.set(docRef, { docsIniciais, docsAtuais }, { merge: true });
+            const updatePayload: Record<string, any> = { docsIniciais, docsAtuais };
+            if (rawReal) {
+              updatePayload.horarioReal = rawReal;
+            }
+            batch.set(docRef, updatePayload, { merge: true });
             updatedCount++;
           } else {
             console.warn(`Rota não encontrada: ${normalizedRota}`);
@@ -152,7 +163,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
           await updateLastUploadAt(new Date());
           alert(`Sucesso! ${updatedCount} rotas atualizadas.${skippedCount > 0 ? ` (${skippedCount} linhas ignoradas)` : ''}`);
         } else {
-          alert('Nenhuma rota válida encontrada no arquivo. Verifique se o formato é: Rota, Qtd Inicial, Qtd Atual');
+          alert('Nenhuma rota válida encontrada no arquivo. Verifique se o formato é: Rota, Qtd Inicial, Qtd Atual, HorarioReal (Opcional)');
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, 'logistics_batch');
@@ -169,8 +180,8 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
   };
 
   const downloadTemplate = () => {
-    const header = "Rota,DocsIniciais,DocsAtuais\n";
-    const content = rows.map(r => `${r.rotas},${r.docsIniciais},${r.docsAtuais}`).join('\n');
+    const header = "Rota,DocsIniciais,DocsAtuais,HorarioReal\n";
+    const content = rows.map(r => `${r.rotas},${r.docsIniciais},${r.docsAtuais},${r.horarioReal || ''}`).join('\n');
     const blob = new Blob([header + content], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -252,6 +263,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
             <th className="p-3 border">Qtd Docs Faltantes</th>
             <th className="p-3 border">% Conclusão</th>
             <th className="p-3 border">Horários</th>
+            <th className="p-3 border">Saída Real</th>
             <th className="p-3 border">Status</th>
           </tr>
         </thead>
@@ -260,6 +272,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
           {rows.filter(r => r.rotas.includes(selectedRoute)).map((row, i) => {
             const diff = Math.max(0, row.docsIniciais - row.docsAtuais);
             const percentage = row.docsIniciais > 0 ? ((diff / row.docsIniciais) * 100).toFixed(0) + '%' : '0%';
+            const isDelayed = row.horarioReal ? isRealTimeDelayed(row.horarioReal, row.horarios) : false;
             
             return (
               <motion.tr 
@@ -291,6 +304,24 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
                 <td className="p-3 border font-bold text-blue-600">{percentage}</td>
                 <td className="p-3 border">{row.horarios}</td>
                 <td className="p-3 border">
+                  <div className="flex flex-col items-center justify-center">
+                    <input 
+                      type="text" 
+                      placeholder={isAdmin ? "HH:MM:SS" : "-"}
+                      value={row.horarioReal || ''} 
+                      disabled={!isAdmin}
+                      onChange={(e) => handleInputChange(row.rotas, 'horarioReal', e.target.value)}
+                      onBlur={() => handleSaveField(row.rotas, 'horarioReal')}
+                      className={`max-w-[100px] text-center p-1 rounded-lg text-xs font-black transition-all ${isAdmin ? 'bg-slate-50 border border-slate-200 focus:border-indigo-500' : 'bg-transparent border-none cursor-default'} ${isDelayed ? 'text-rose-600 bg-rose-50 border-rose-200 font-extrabold' : 'text-slate-700'}`}
+                    />
+                    {isDelayed && (
+                      <span className="text-[9px] font-black uppercase text-rose-600 bg-rose-100/50 px-1.5 py-0.5 rounded-md mt-1 animate-pulse flex items-center gap-0.5">
+                        ⚠️ Atrasado
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="p-3 border">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[row.status] || 'bg-slate-100 text-slate-800'}`}>
                     {row.status}
                   </span>
@@ -303,6 +334,7 @@ export function LogisticsTable({ isAdmin = false, selectedRoute, onRouteSelect }
             <td className="p-3 border">Total</td>
             <td className="p-3 border">{rows.reduce((acc, row) => acc + (row.docsIniciais || 0), 0)}</td>
             <td className="p-3 border">{rows.reduce((acc, row) => acc + (row.docsAtuais || 0), 0)}</td>
+            <td className="p-3 border">-</td>
             <td className="p-3 border">-</td>
             <td className="p-3 border">-</td>
             <td className="p-3 border">-</td>

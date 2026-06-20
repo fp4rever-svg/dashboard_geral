@@ -8,6 +8,7 @@ export interface LogisticsRow {
   docsAtuais: number;
   horarios: string;
   status: string;
+  horarioReal?: string;
 }
 
 const FIXED_DATA = [
@@ -106,6 +107,34 @@ export function getAutomaticStatus(docsIniciais: number, docsAtuais: number, hor
   return "Pendente";
 }
 
+export function isRealTimeDelayed(realStr: string, limitStr: string) {
+  if (!realStr || !limitStr) return false;
+  const cleanReal = realStr.trim();
+  const cleanLimit = limitStr.trim();
+
+  const toMinutes = (timeStr: string) => {
+    const parts = timeStr.split(':').map(Number);
+    if (parts.some(isNaN)) return 0;
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const s = parts[2] || 0;
+    return h * 60 + m + s / 60;
+  };
+
+  const realMin = toMinutes(cleanReal);
+  const limitMin = toMinutes(cleanLimit);
+
+  // Crossing midnight check: limit is past 20:00 (8 PM) and real is early morning (before 6 AM)
+  if (limitMin > 20 * 60 && realMin < 6 * 60) {
+    return true;
+  }
+  if (realMin > 20 * 60 && limitMin < 6 * 60) {
+    return false;
+  }
+
+  return realMin > limitMin;
+}
+
 export function useLogisticsData() {
   const [dbData, setDbData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -148,7 +177,8 @@ export function useLogisticsData() {
         docsIniciais,
         docsAtuais,
         horarios: adjustHorarioForShift(originalRow.horarios),
-        status: getAutomaticStatus(docsIniciais, docsAtuais, originalRow.horarios)
+        status: getAutomaticStatus(docsIniciais, docsAtuais, originalRow.horarios),
+        horarioReal: custom.horarioReal ?? ""
       } as LogisticsRow;
     });
   }, [dbData, currentTime]);
