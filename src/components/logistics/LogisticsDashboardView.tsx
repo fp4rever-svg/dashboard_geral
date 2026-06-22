@@ -9,6 +9,7 @@ import { useProjectionData, ProjectionData } from '../../hooks/useProjectionData
 import { useAbsenteeismData } from '../../hooks/useAbsenteeismData';
 import { useWakeLock } from '../../hooks/useWakeLock';
 import { useNotificationManager } from '../../hooks/useNotificationManager';
+import { useRouteFlowData } from '../../hooks/useRouteFlowData';
 import { 
     Truck, 
     Package, 
@@ -31,7 +32,11 @@ import {
     Bell,
     BellOff,
     Copy,
-    Check
+    Check,
+    X,
+    Workflow,
+    TrendingDown,
+    AlertTriangle
 } from 'lucide-react';
 
 interface LogisticsRow {
@@ -103,7 +108,9 @@ interface LogisticsDashboardViewProps {
 }
 
 export function LogisticsDashboardView({ productionData, forcedView, externalTVMode, selectedRoute = '' }: LogisticsDashboardViewProps) {
+    const { getRouteData } = useRouteFlowData();
     const { rows, loading: loadingLogistics, lastUpdated } = useLogisticsData();
+    const [selectedRouteForStats, setSelectedRouteForStats] = useState<string | null>(null);
     const { data: projection, loading: loadingProjection } = useProjectionData();
     const { totals: absenteeismTotals } = useAbsenteeismData();
 
@@ -806,6 +813,7 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.9, y: 10 }}
                                                 transition={{ delay: index * 0.01 }}
+                                                onClick={() => setSelectedRouteForStats(row.rotas)}
                                                 className={`bg-white p-3.5 rounded-xl border ${row.status === 'Finalizado' ? 'border-slate-100 opacity-60 scale-75' : 'border-slate-200 shadow-sm'} ${row.status === 'Atrasado' ? 'ring-2 ring-red-400 animate-pulse' : ''} hover:border-blue-400 transition-all hover:shadow-xl group relative cursor-pointer active:scale-95`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
@@ -887,6 +895,205 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                     </div>
                 </div>
             )}
+
+            {/* Modal de Detalhes da Rota (Sub-visualização ao clicar em uma Rota) */}
+            <AnimatePresence>
+                {selectedRouteForStats && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedRouteForStats(null)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        
+                        {/* Card */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl border border-slate-150 shadow-2xl relative w-full max-w-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
+                        >
+                            {/* Header */}
+                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+                                <div>
+                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-md uppercase tracking-wider">Mapeamento Avançado</span>
+                                    <h3 className="text-2xl font-black text-slate-950 mt-1 flex items-center gap-2">
+                                        <Truck className="w-6 h-6 text-blue-600" />
+                                        Rota {selectedRouteForStats}
+                                    </h3>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedRouteForStats(null)}
+                                    className="p-2.5 rounded-full hover:bg-slate-150 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer border border-slate-100 bg-white shadow-sm"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-700">
+                                {(() => {
+                                    const rData = getRouteData(selectedRouteForStats);
+                                    if (!rData) return null;
+
+                                    const hasZwm = !!rData.zwm;
+                                    const hasSalesCuts = !!rData.salesCuts;
+                                    
+                                    // Calculate progress steps percents relative to max of all fields to scale visually
+                                    const zwm = rData.zwm;
+                                    const maxZwmVal = zwm ? Math.max(zwm.caixasSeparacao, zwm.separacao, zwm.conferencia, zwm.postoEmbalagem, 1) : 1;
+
+                                    return (
+                                        <>
+                                            {/* ZWM0255P Flow Steps */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Workflow className="w-5 h-5 text-blue-600" />
+                                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">Mapeamento de Caixas (ZWM0255P)</h4>
+                                                </div>
+
+                                                {hasZwm && zwm ? (
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                                                            <span className="text-[9px] font-extrabold text-slate-500 uppercase block">Caixas Separadoras</span>
+                                                            <span className="text-xl font-black text-slate-800 block font-mono">{zwm.caixasSeparacao} <span className="text-[10px] text-slate-405">cx</span></span>
+                                                            <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden mt-2">
+                                                                <div className="bg-blue-600 h-full rounded-full" style={{ width: `${(zwm.caixasSeparacao / maxZwmVal) * 100}%` }} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                                                            <span className="text-[9px] font-extrabold text-slate-500 uppercase block">Caixas em Uso</span>
+                                                            <span className="text-xl font-black text-slate-800 block font-mono">{zwm.cxSepEmUso} <span className="text-[10px] text-slate-405">cx</span></span>
+                                                            <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden mt-2">
+                                                                <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(zwm.cxSepEmUso / maxZwmVal) * 100}%` }} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                                                            <span className="text-[9px] font-extrabold text-red-500 uppercase block">Omissões / Rep. Faltas</span>
+                                                            <span className="text-xl font-black text-red-750 block font-mono">{zwm.recFaltas} <span className="text-[10px] text-slate-405">cx</span></span>
+                                                            <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden mt-2">
+                                                                <div className="bg-red-500 h-full rounded-full" style={{ width: `${(zwm.recFaltas / maxZwmVal) * 100}%` }} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                                                            <span className="text-[9px] font-extrabold text-amber-500 uppercase block">Caixas em Separação</span>
+                                                            <span className="text-xl font-black text-slate-800 block font-mono">{zwm.separacao} <span className="text-[10px] text-slate-400">cx</span></span>
+                                                            <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden mt-2">
+                                                                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${(zwm.separacao / maxZwmVal) * 100}%` }} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
+                                                            <span className="text-[9px] font-extrabold text-sky-500 uppercase block">Em Conferência</span>
+                                                            <span className="text-xl font-black text-slate-800 block font-mono">{zwm.conferencia} <span className="text-[10px] text-slate-400">cx</span></span>
+                                                            <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden mt-2">
+                                                                <div className="bg-sky-500 h-full rounded-full" style={{ width: `${(zwm.conferencia / maxZwmVal) * 100}%` }} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1 col-span-2 sm:col-span-1">
+                                                            <span className="text-[9px] font-extrabold text-emerald-500 uppercase block">Expedido</span>
+                                                            <span className="text-xl font-black text-emerald-600 block font-mono">{zwm.expedicao} <span className="text-[10px] text-slate-400">cx</span></span>
+                                                            <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden mt-2">
+                                                                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(zwm.expedicao / maxZwmVal) * 100}%` }} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-6 rounded-2xl bg-slate-50 text-center text-xs text-slate-400 border border-slate-100 font-bold">
+                                                        Nenhuma caixa mapeada no fluxo ZWM para a rota {selectedRouteForStats} nesta data.
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Sales & Cuts Correlation */}
+                                            <div className="space-y-4 pt-4 border-t border-slate-100">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <TrendingDown className="w-5 h-5 text-blue-600" />
+                                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">Desempenho Comercial & Cortes</h4>
+                                                </div>
+
+                                                {hasSalesCuts && rData.salesCuts ? (
+                                                    <div className="space-y-4">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1">
+                                                                <span className="text-[9px] font-black text-blue-600 uppercase block">Volume Unidades Vendidas</span>
+                                                                <span className="text-2xl font-black text-slate-900 font-mono">{rData.salesCuts.vendas.toLocaleString('pt-BR')}</span>
+                                                            </div>
+                                                            <div className="p-4 rounded-2xl bg-red-50/50 border border-red-100 space-y-1">
+                                                                <span className="text-[9px] font-black text-red-650 uppercase block">Quantidade Cortes Físicos</span>
+                                                                <span className="text-2xl font-black text-red-600 font-mono">{rData.salesCuts.cortes.toLocaleString('pt-BR')}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Gauge comparison */}
+                                                        <div className="p-5 rounded-2xl border border-slate-200/80 bg-white space-y-3.5">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-xs font-black text-slate-600 uppercase">Proporção Real de Cortes</span>
+                                                                <span className={`text-sm font-black px-3 py-1 rounded-full font-mono ${
+                                                                    rData.salesCuts.percentCorte > 1.5 
+                                                                        ? 'bg-rose-50 border border-rose-100 text-rose-600 animate-pulse' 
+                                                                        : rData.salesCuts.percentCorte > 0.5 
+                                                                            ? 'bg-amber-50 border border-amber-150 text-amber-600' 
+                                                                            : 'bg-emerald-50 border border-emerald-100 text-emerald-600'
+                                                                }`}>
+                                                                    {rData.salesCuts.percentCorte.toFixed(2)}%
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="relative pb-6">
+                                                                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                                                    <div 
+                                                                        className={`h-full rounded-full transition-all duration-500 ${
+                                                                            rData.salesCuts.percentCorte > 1.5 ? 'bg-red-500' : 'bg-blue-600'
+                                                                        }`}
+                                                                        style={{ width: `${Math.min(100, rData.salesCuts.percentCorte * 20)}%` }}
+                                                                    />
+                                                                </div>
+                                                                <div className="absolute left-[10%] top-4 -translate-x-1/2 flex flex-col items-center">
+                                                                    <div className="w-px h-2 bg-slate-350" />
+                                                                    <span className="text-[7.5px] font-black text-slate-400 mt-1 uppercase">Meta (0.5%)</span>
+                                                                </div>
+                                                                <div className="absolute left-[30%] top-4 -translate-x-1/2 flex flex-col items-center">
+                                                                    <div className="w-px h-2 bg-slate-350" />
+                                                                    <span className="text-[7.5px] font-black text-slate-400 mt-1 uppercase">Crítico (1.5%)</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="pt-4 flex items-start gap-3 mt-2 text-xs font-medium text-slate-500">
+                                                                <AlertTriangle className={`w-5 h-5 shrink-0 ${rData.salesCuts.percentCorte > 1.5 ? 'text-red-500' : 'text-slate-405'}`} />
+                                                                <div className="leading-relaxed">
+                                                                    {rData.salesCuts.percentCorte > 1.5 ? (
+                                                                        <span className="text-red-600 font-extrabold block">Alerta: A Rota excede as metas de integridade e eficiência operacional. Avaliar os cortes com o time do CD urgentemente.</span>
+                                                                    ) : rData.salesCuts.percentCorte > 0.5 ? (
+                                                                        <span className="text-amber-600 font-extrabold block">Atenção: Margem de perdas moderada. Canal de transporte está se aproximando do limite de segurança.</span>
+                                                                    ) : (
+                                                                        <span className="text-emerald-700 font-extrabold block">Eficiente: Níveis de corte ideais. O volume expedido cobre quase a totalidade das demandas vendidas.</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-6 rounded-2xl bg-slate-50 text-center text-xs text-slate-400 border border-slate-100 font-bold">
+                                                        Métricas de vendas indisponíveis
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
       </div>
     );

@@ -1,0 +1,6 @@
+rota,caixasSeparacao,cxSepEmUso,recFaltas,separacao,conferencia,postoEmbalagem,expedicao,vendas,cortes
+ROTA 101,150,12,3,45,20,15,55,8400,12
+ROTA 102,80,5,1,22,10,8,34,5200,4
+ROTA 103,120,8,2,30,15,10,55,11500,80
+ROTA 104,200,15,5,50,30,25,75,14200,25
+ROTA 105,95,6,2,25,12,10,40,6100,8

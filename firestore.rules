@@ -29,6 +29,9 @@ service cloud.firestore {
     match /sheets_config/{document} {
       allow read, write: if true;
     }
+    match /route_stats/{document} {
+      allow read, write: if true;
+    }
     match /config/{document} {
       allow read, write: if true;
     }

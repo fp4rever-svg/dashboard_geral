@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNotificationManager } from '../../hooks/useNotificationManager';
 import { NotificationSettingsPanel } from '../logistics/NotificationSettingsPanel';
+import { AdminRouteStatsImporter } from './AdminRouteStatsImporter';
 import { 
   Volume2, 
   VolumeX, 
@@ -18,7 +19,8 @@ import {
   Pause,
   TrendingUp,
   Activity,
-  CheckSquare
+  CheckSquare,
+  LayoutGrid
 } from 'lucide-react';
 
 interface AdminSettingsProps {
@@ -84,6 +86,41 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
       return 10000;
     }
   });
+
+  // Seleção de Abas do Modo TV
+  const [tvModeSelectedTabs, setTvModeSelectedTabs] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tv_mode_selected_tabs');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // fallback
+    }
+    return ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos'];
+  });
+
+  const toggleTvTab = (tabId: string) => {
+    const isSelected = tvModeSelectedTabs.includes(tabId);
+    let next;
+    if (isSelected) {
+      next = tvModeSelectedTabs.filter(id => id !== tabId);
+    } else {
+      next = [...tvModeSelectedTabs, tabId];
+    }
+    setTvModeSelectedTabs(next);
+    localStorage.setItem('tv_mode_selected_tabs', JSON.stringify(next));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const tvTabOptions = [
+    { id: 'log_analytics', name: 'Log. Analytics - Dashboard (Logística)', desc: 'Gráficos de volumetria, de faturamento e cubagem expedida.' },
+    { id: 'painel', name: 'Desempenho Operacional (Produção)', desc: 'Comparativos horários, metas e indicadores de expedição.' },
+    { id: 'route_dashboard', name: 'Cortes & Fluxo de Caixa por Rota', desc: 'Rastreamento de caixas em circulação (ZWM), vendas e cortes por rota.' },
+    { id: 'saude', name: 'Saúde da Operação (Presença / Absenteeismo)', desc: 'Avisos de absentismo e taxa de rotação operacional.' },
+    { id: 'productivity_ops', name: 'Painel de Produtividade', desc: 'Metas e performance horária detalhada por setor.' },
+    { id: 'avisos', name: 'Mural de Avisos / Comunicados', desc: 'Mapeamento de comunicados internos do CD.' }
+  ];
 
   const [testSuccess, setTestSuccess] = useState(false);
 
@@ -277,6 +314,9 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
           </div>
         </div>
 
+        {/* 2.5 Carga de Tabelas das Rotas (ZWM, Vendas e Cortes) */}
+        <AdminRouteStatsImporter />
+
         {/* 3. TV Mode Rotation Setup Panel */}
         <div className="bg-white p-6 rounded-3xl border border-slate-150 shadow-sm space-y-6">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -415,6 +455,58 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
                   <option value={30000}>30 segundos</option>
                   <option value={60000}>1 minuto</option>
                 </select>
+              </div>
+            </div>
+
+            {/* 3.4 Seleção de Abas Inclusas na Rotação */}
+            <div className="flex flex-col p-5 bg-slate-50 rounded-2xl border border-slate-150 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-purple-500 to-indigo-600 h-full" />
+              
+              <div className="flex items-start gap-3.5 pl-2 mb-4">
+                <div className="p-3 rounded-2xl flex items-center justify-center bg-purple-50/80 text-purple-600 border border-purple-100 shadow-inner shrink-0 mt-0.5">
+                  <LayoutGrid className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 leading-none flex items-center gap-2">
+                    Abas Inclusas na Rotação Geral (Modo TV)
+                  </h4>
+                  <p className="text-xs text-slate-500 font-extrabold tracking-wider mt-2 max-w-xl leading-relaxed">
+                    Marque quais painéis principais do CD devem fazer parte da rotação cíclica no Modo TV. Caso nenhuma esteja selecionada, todas serão rotacionadas como padrão.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pl-2">
+                {tvTabOptions.map((opt) => {
+                  const isChecked = tvModeSelectedTabs.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => toggleTvTab(opt.id)}
+                      className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all hover:shadow-xs cursor-pointer ${
+                        isChecked
+                          ? 'bg-white border-indigo-200 shadow-sm'
+                          : 'bg-slate-50/50 border-slate-200 text-slate-400 opacity-75'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {}} 
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
+                      />
+                      <div className="space-y-1">
+                        <span className={`block text-xs font-bold leading-none ${isChecked ? 'text-slate-800' : 'text-slate-500'}`}>
+                          {opt.name}
+                        </span>
+                        <p className="text-[10px] whitespace-normal text-slate-400 font-semibold leading-relaxed">
+                          {opt.desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -15,6 +15,7 @@ import { AbsenteeismManagement } from './components/admin/AbsenteeismManagement'
 import { AdminSettingsView } from './components/admin/AdminSettingsView';
 import { ProductivityReportView } from './components/admin/ProductivityReportView';
 import { AIBaseManagementView } from './components/admin/AIBaseManagementView';
+import { RouteFlowAndSalesDashboard } from './components/logistics/RouteFlowAndSalesDashboard';
 import FloatingAIAssistant from './components/views/FloatingAIAssistant';
 import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2, Tv } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
@@ -61,6 +62,41 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 15000; // default 15 seconds
   });
 
+  const [tvModeSelectedTabs, setTvModeSelectedTabs] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tv_mode_selected_tabs');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos'];
+  });
+
+  // Escutar atualizações de localStorage para sincronizar mudanças nas configurações
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const savedInterval = localStorage.getItem('tv_mode_rotation_interval');
+        if (savedInterval) {
+          setTvModeInterval(parseInt(savedInterval, 10));
+        }
+
+        const savedTabs = localStorage.getItem('tv_mode_selected_tabs');
+        if (savedTabs) {
+          setTvModeSelectedTabs(JSON.parse(savedTabs));
+        } else {
+          setTvModeSelectedTabs(['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos']);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const ADMIN_EMAIL = 'fp4rever@gmail.com';
 
   useEffect(() => {
@@ -71,16 +107,19 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Efeito para alternância automática das abas de Operações no Modo TV (com intervalo customizado)
+  // Efeito para alternância automática das abas de Operações no Modo TV (com abas selecionáveis e intervalo customizado)
   useEffect(() => {
     if (!isMaximized) return;
 
-    const rotatableTabs = ['log_analytics', 'painel', 'saude', 'productivity_ops', 'avisos'];
+    // Se nenhuma aba tiver marcada, rotacionamos todas por padrão para evitar loop vazio
+    const rotatableTabs = tvModeSelectedTabs.length > 0 
+      ? tvModeSelectedTabs 
+      : ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos'];
     
     // Se estiver em uma aba que não faz parte das abas rotacionáveis de Operações,
-    // redefine imediatamente para a primeira aba da lista.
+    // redefine imediatamente para a primeira aba da lista útil.
     if (!rotatableTabs.includes(activeTab)) {
-      setActiveTab('log_analytics');
+      setActiveTab(rotatableTabs[0] || 'log_analytics');
     }
 
     const interval = setInterval(() => {
@@ -92,7 +131,7 @@ export default function App() {
     }, tvModeInterval); // Alternar visualização a cada tvModeInterval milissegundos
 
     return () => clearInterval(interval);
-  }, [isMaximized, activeTab, tvModeInterval]);
+  }, [isMaximized, activeTab, tvModeInterval, tvModeSelectedTabs]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -192,7 +231,7 @@ export default function App() {
     );
   }
 
-  const publicTabs = ['log_analytics', 'painel', 'saude', 'avisos', 'productivity_ops'];
+  const publicTabs = ['log_analytics', 'route_dashboard', 'painel', 'saude', 'avisos', 'productivity_ops'];
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden relative">
@@ -210,6 +249,7 @@ export default function App() {
               <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold text-slate-900">
                   {activeTab === 'painel' && 'Desempenho Operacional'}
+                  {activeTab === 'route_dashboard' && 'Cortes & Fluxo de Caixa por Rota'}
                   {activeTab === 'log_dashboard' && 'Log. Analytics - Tabela'}
                   {activeTab === 'saude' && 'Saúde da Operação'}
                   {activeTab === 'avisos' && 'Comunicados Operacionais'}
@@ -235,6 +275,7 @@ export default function App() {
                 </h1>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'painel' && 'Monitoramento em Tempo Real de Volume.'}
+                  {activeTab === 'route_dashboard' && 'Rastreamento de caixas em circulação real (ZWM) conjugado ao volume de vendas e cortes físicos.'}
                   {activeTab === 'saude' && 'Monitoramento de indicators críticos e absenteísmo.'}
                   {activeTab === 'avisos' && 'Atualizações e alertas da equipe operacional.'}
                   {activeTab === 'log_analytics' && 'Visão geral das operações de transporte e retenção.'}
@@ -344,6 +385,10 @@ export default function App() {
                 }}
                 selectedRoute={selectedRoute}
               />
+            )}
+
+            {activeTab === 'route_dashboard' && (
+              <RouteFlowAndSalesDashboard />
             )}
             
             {!isAdmin && !publicTabs.includes(activeTab) && (

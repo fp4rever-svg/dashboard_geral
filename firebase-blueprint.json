@@ -105,6 +105,25 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["spreadsheetId", "sheetName", "updatedAt"]
+    },
+    "RouteStats": {
+      "title": "Route Stats",
+      "description": "Merged metrics for route box flow, sales volumes, and physical cuts.",
+      "type": "object",
+      "properties": {
+        "rota": { "type": "string" },
+        "caixasSeparacao": { "type": "number" },
+        "cxSepEmUso": { "type": "number" },
+        "recFaltas": { "type": "number" },
+        "separacao": { "type": "number" },
+        "conferencia": { "type": "number" },
+        "postoEmbalagem": { "type": "number" },
+        "expedicao": { "type": "number" },
+        "vendas": { "type": "number" },
+        "cortes": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["rota"]
     }
   },
   "firestore": {
@@ -139,6 +158,10 @@
     "sheets_config": {
       "schema": "SheetsConfig",
       "description": "Google Sheets synchronization config."
+    },
+    "route_stats": {
+      "schema": "RouteStats",
+      "description": "Merged metrics for route box flow, sales volumes, and physical cuts."
     }
   }
 }
