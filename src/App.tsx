@@ -247,9 +247,9 @@ export default function App() {
         )}
         <main className={`flex-1 overflow-y-auto ${isMaximized ? 'p-4' : 'p-8'}`}>
           <div className="max-w-[1440px] mx-auto space-y-8">
-            <div className={`flex justify-between items-center ${isMaximized ? 'hidden' : ''}`}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-5">
               <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold text-slate-900">
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
                   {activeTab === 'painel' && 'Desempenho Operacional'}
                   {activeTab === 'route_dashboard' && 'Cortes & Fluxo de Caixa por Rota'}
                   {activeTab === 'log_dashboard' && 'Log. Analytics - Tabela'}
@@ -277,7 +277,7 @@ export default function App() {
                   {activeTab === 'gestao_faltas' && 'Gestão de Faltas'}
                   {activeTab === 'simulacao_saidas' && 'Simulação e Projeção de Partidas'}
                 </h1>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs md:text-sm text-slate-500 font-medium">
                   {activeTab === 'painel' && 'Monitoramento em Tempo Real de Volume.'}
                   {activeTab === 'route_dashboard' && 'Rastreamento de caixas em circulação real (ZWM) conjugado ao volume de vendas e cortes físicos.'}
                   {activeTab === 'simulacao_saidas' && 'Modelagem de produtividade de separação e penalidades para projetar partidas de rotas.'}
@@ -293,23 +293,23 @@ export default function App() {
                 </p>
               </div>
               
-                <div className="flex items-center gap-4">
-                  <StatusClocks 
-                    lastUpdated={getEffectiveLastUpdated()} 
-                    isAdmin={isAdmin}
-                    onUpdateLastUpdated={updateLastUpdated}
-                  />
-                  
-                  {isAdmin && (
-                    <button 
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-red-500 transition-colors border-l border-slate-200 pl-4 ml-4"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sair
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <StatusClocks 
+                  lastUpdated={getEffectiveLastUpdated()} 
+                  isAdmin={isAdmin}
+                  onUpdateLastUpdated={updateLastUpdated}
+                />
+                
+                {isAdmin && !isMaximized && (
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-red-500 transition-colors border-l border-slate-200 pl-4 ml-4"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sair
+                  </button>
+                )}
+              </div>
             </div>
             
             {activeTab === 'painel' && (

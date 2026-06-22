@@ -372,31 +372,23 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
     );
   
     return (
-      <div className={`space-y-6 ${isTVMode ? 'fixed inset-0 z-[100] bg-slate-50 p-8 overflow-y-auto' : ''}`}>
+      <div className="space-y-6">
         {productionData && <NewsTicker messages={tickerMessages} />}
-        {/* Header & Controls */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center flex-wrap gap-e-2 gap-x-3">
-                    {isTVMode ? <div className="p-2 bg-slate-900 rounded-lg text-white"><Activity className="w-5 h-5 animate-pulse" /></div> : null}
-                    <span>Logistics Operations</span>
-                    {isTVMode && (
-                      <span className="flex items-center gap-3.5 text-slate-400 font-bold text-lg md:text-xl">
-                        <span>| TV Insights Mode</span>
-                        <DashboardClock size="tv" className="scale-105" lastSynced={lastUpdated} />
-                      </span>
-                    )}
-                </h2>
-                <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <p className="text-slate-500 text-sm font-medium italic">
-                        {tvView === 'health' ? 'Monitoramento de integridade e presença' : `Fluxo operacional em tempo real • ${rows.length} Rotas ativas`}
-                    </p>
-                </div>
+        {/* Compact Controls Area */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/50 border border-slate-200/60 p-4 rounded-2xl">
+            {/* View status / indicator badge */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest leading-none">
+                    {tvView === 'health' ? 'Saúde & Absenteísmo' : `Fluxo Ativo • ${rows.length} Rotas`}
+                </span>
             </div>
 
             {!forcedView && (
-                <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-inner overflow-x-auto no-scrollbar">
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner overflow-x-auto no-scrollbar shrink-0">
                     <button 
                         onClick={() => setTvView('logistics')}
                         className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${tvView === 'logistics' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
@@ -424,22 +416,23 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                 </div>
             )}
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
-                <div className="relative flex-1 md:w-64">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input 
                         type="text" 
                         placeholder="Buscar rota..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium shadow-xs"
                     />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     {isTVMode && (
                         <button 
+                            type="button"
                             onClick={() => setIsPaused(!isPaused)}
-                            className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors"
+                            className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
                             title={isPaused ? "Resumir transições" : "Pausar transições"}
                         >
                             {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
@@ -448,16 +441,16 @@ export function LogisticsDashboardView({ productionData, forcedView, externalTVM
                     <button
                         type="button"
                         onClick={toggleSound}
-                        className={`p-2 rounded-lg border transition-all ${
+                        className={`p-2 rounded-lg border transition-all cursor-pointer ${
                             soundEnabled 
                                 ? 'bg-emerald-50 border-emerald-200/80 text-emerald-600 hover:bg-emerald-100' 
                                 : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'
                         }`}
-                        title={soundEnabled ? "Silenciar Alertas" : "Ativar Alertas Sonoros"}
+                        title={soundEnabled ? "Desativar alertas sonoros" : "Ativar alertas sonoros"}
                     >
                         {soundEnabled ? <Volume2 className="w-4 h-4 animate-pulse" /> : <VolumeX className="w-4 h-4" />}
                     </button>
-                    <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors">
+                    <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer">
                         <Filter className="w-4 h-4" />
                     </button>
                 </div>
