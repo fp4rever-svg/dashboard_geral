@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useNotificationManager } from '../../hooks/useNotificationManager';
 import { NotificationSettingsPanel } from '../logistics/NotificationSettingsPanel';
-import { AdminRouteStatsImporter } from './AdminRouteStatsImporter';
 import { 
   Volume2, 
   VolumeX, 
@@ -20,7 +21,10 @@ import {
   TrendingUp,
   Activity,
   CheckSquare,
-  LayoutGrid
+  LayoutGrid,
+  Trash2,
+  Loader2,
+  AlertOctagon
 } from 'lucide-react';
 
 interface AdminSettingsProps {
@@ -29,6 +33,49 @@ interface AdminSettingsProps {
 }
 
 export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }: AdminSettingsProps) {
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleGeneralReset = async () => {
+    setResetting(true);
+    try {
+      const collectionsToClear = [
+        'production_analytics',
+        'user_performance',
+        'announcements',
+        'logistics_data',
+        'route_stats',
+        'absenteeism'
+      ];
+
+      for (const colName of collectionsToClear) {
+        const snapshot = await getDocs(collection(db, colName));
+        const batch = writeBatch(db);
+        snapshot.forEach((snapDoc) => {
+          batch.delete(snapDoc.ref);
+        });
+        await batch.commit();
+      }
+
+      // Clear localStorage except credentials
+      const keysToKeep = ['isGenericAdmin', 'userEmail'];
+      const keysSnapshot = { ...localStorage };
+      Object.keys(keysSnapshot).forEach((key) => {
+        if (!keysToKeep.includes(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      window.location.reload();
+    } catch (err) {
+      console.error("Erro no reset geral das bases:", err);
+      alert("Houve um problema ao zerar as bases: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setResetting(false);
+      setShowResetConfirm(false);
+    }
+  };
+
   const {
     permission: notificationPermission,
     notificationsEnabled,
@@ -97,7 +144,7 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
     } catch {
       // fallback
     }
-    return ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos'];
+    return ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos', 'simulacao_saidas'];
   });
 
   const toggleTvTab = (tabId: string) => {
@@ -117,6 +164,7 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
     { id: 'log_analytics', name: 'Log. Analytics - Dashboard (Logística)', desc: 'Gráficos de volumetria, de faturamento e cubagem expedida.' },
     { id: 'painel', name: 'Desempenho Operacional (Produção)', desc: 'Comparativos horários, metas e indicadores de expedição.' },
     { id: 'route_dashboard', name: 'Cortes & Fluxo de Caixa por Rota', desc: 'Rastreamento de caixas em circulação (ZWM), vendas e cortes por rota.' },
+    { id: 'simulacao_saidas', name: 'Simulação e Projeção de Saídas', desc: 'Previsões e projeções do horário de saída de rotas com base em volumes e Rec Falta.' },
     { id: 'saude', name: 'Saúde da Operação (Presença / Absenteeismo)', desc: 'Avisos de absentismo e taxa de rotação operacional.' },
     { id: 'productivity_ops', name: 'Painel de Produtividade', desc: 'Metas e performance horária detalhada por setor.' },
     { id: 'avisos', name: 'Mural de Avisos / Comunicados', desc: 'Mapeamento de comunicados internos do CD.' }
@@ -313,10 +361,6 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
             </div>
           </div>
         </div>
-
-        {/* 2.5 Carga de Tabelas das Rotas (ZWM, Vendas e Cortes) */}
-        <AdminRouteStatsImporter />
-
         {/* 3. TV Mode Rotation Setup Panel */}
         <div className="bg-white p-6 rounded-3xl border border-slate-150 shadow-sm space-y-6">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -507,6 +551,76 @@ export function AdminSettingsView({ tvModeInterval = 15000, setTvModeInterval }:
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* 3.5 Reset Geral das Bases de Dados */}
+            <div className="flex flex-col p-5 bg-rose-50/25 rounded-2xl border border-rose-150 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 bg-gradient-to-b from-rose-500 to-red-650 h-full" />
+              
+              <div className="flex items-start gap-3.5 pl-2 mb-4">
+                <div className="p-3 rounded-2xl flex items-center justify-center bg-rose-50/80 text-rose-600 border border-rose-100 shadow-inner shrink-0 mt-0.5">
+                  <AlertOctagon className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-rose-950 leading-none flex items-center gap-2 uppercase tracking-wide">
+                    Reset Geral e Limpeza de Bases de Dados
+                  </h4>
+                  <p className="text-xs text-slate-500 font-medium tracking-wide mt-2 max-w-2xl leading-relaxed">
+                    Ação administrativa para zerar e repopular as bases de dados do CD. Isto apagará overrides customizados (como envios de planilhas de rotas ZWM, faturamento, absenteísmo de funcionários e comunicados) e recomeçará as tabelas do zero, <strong className="text-emerald-600">preservando os manuais e regras da inteligência artificial</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pl-2 pt-1 col-span-full">
+                {!showResetConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirm(true)}
+                    className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-rose-600/10 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Zerar Todas as Bases
+                  </button>
+                ) : (
+                  <div className="bg-white border border-rose-200 rounded-xl p-4 max-w-md space-y-3 shadow-lg">
+                    <p className="text-xs text-rose-900 font-extrabold flex items-center gap-1.5 uppercase tracking-wide">
+                      <AlertOctagon className="w-4 h-4 text-rose-600 animate-bounce" />
+                      Tem certeza que deseja prosseguir?
+                    </p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">
+                      Esta operação é definitiva, limpará todo o histórico customizado e as tabelas/gráficos retornam aos valores simulados originais do CD.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={resetting}
+                        onClick={() => setShowResetConfirm(false)}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500 disabled:opacity-50 cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={resetting}
+                        onClick={handleGeneralReset}
+                        className="flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        {resetting ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Zerando Bases...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Sim, Zerar Definitivamente
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

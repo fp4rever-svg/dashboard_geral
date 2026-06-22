@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Factory, Truck, BarChart3, FileText, TableProperties, LineChart, Users, HeartPulse, LayoutDashboard, Megaphone, ExternalLink, GripVertical, Settings, Sparkles, Database, Workflow } from 'lucide-react';
+import { Factory, Truck, BarChart3, FileText, TableProperties, LineChart, Users, HeartPulse, LayoutDashboard, Megaphone, ExternalLink, GripVertical, Settings, Sparkles, Database, Workflow, AlertCircle, Clock } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -12,6 +12,7 @@ interface SideNavBarProps {
 
 const GESTAO_ITEMS_CONFIG: Record<string, { label: string; icon: any, type?: string }> = {
   log_dashboard: { label: 'Log. Tabela', icon: TableProperties },
+  gestao_faltas: { label: 'Gestão de Faltas', icon: AlertCircle },
   relatorios: { label: 'Gerenciar Produtividade', icon: FileText },
   daily_projection: { label: 'Projeção Diária', icon: LineChart },
   absenteismo: { label: 'Absenteísmo', icon: Users },
@@ -117,6 +118,13 @@ export function SideNavBar({ activeTab, onTabChange, isAdmin }: SideNavBarProps)
           >
             <Workflow className="w-5 h-5" />
             <span className="text-sm font-bold">Cortes & Fluxo Caixa</span>
+          </button>
+          <button 
+            onClick={() => onTabChange('simulacao_saidas')}
+            className={`flex items-center gap-4 rounded-xl px-4 py-3 transition-all ${activeTab === 'simulacao_saidas' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-200'}`}
+          >
+            <Clock className="w-5 h-5" />
+            <span className="text-sm font-bold">Projeção de Saídas</span>
           </button>
           <button 
             onClick={() => onTabChange('painel')}

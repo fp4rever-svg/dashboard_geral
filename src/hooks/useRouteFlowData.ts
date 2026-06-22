@@ -79,39 +79,58 @@ export function useRouteFlowData() {
 
   // Compute merged routes list and details
   const routesData = useMemo<Record<string, RouteCombinedData>>(() => {
-    const hasDbData = Object.keys(dbRoutes).length > 0;
+    const merged: Record<string, RouteCombinedData> = {};
     
-    // If no db records exist, fall back completely to static mock data
-    if (!hasDbData) {
-      const fallback: Record<string, RouteCombinedData> = {};
-      ALL_ROUTES.forEach((route) => {
-        const zwmRaw = ZWM0255P_RAW[route];
-        const vendas = SALES_RAW[route] || 0;
-        const cortes = CUTS_RAW[route] || 0;
-        const percentCorte = vendas > 0 ? (cortes / vendas) * 100 : 0;
+    // 1. Populate with mock baseline so we always have a full slate of routes
+    ALL_ROUTES.forEach((route) => {
+      const zwmRaw = ZWM0255P_RAW[route];
+      const vendas = SALES_RAW[route] || 0;
+      const cortes = CUTS_RAW[route] || 0;
+      const percentCorte = vendas > 0 ? (cortes / vendas) * 100 : 0;
 
-        fallback[route] = {
-          rota: route,
-          zwm: zwmRaw ? {
-            caixasSeparacao: zwmRaw.caixasSeparacao,
-            cxSepEmUso: zwmRaw.cxSepEmUso,
-            recFaltas: zwmRaw.recFaltas,
-            separacao: zwmRaw.separacao,
-            conferencia: zwmRaw.conferencia,
-            postoEmbalagem: zwmRaw.postoEmbalagem,
-            expedicao: zwmRaw.expedicao || 0,
-          } : undefined,
-          salesCuts: {
-            vendas,
-            cortes,
-            percentCorte
-          }
+      merged[route] = {
+        rota: route,
+        zwm: zwmRaw ? {
+          caixasSeparacao: zwmRaw.caixasSeparacao,
+          cxSepEmUso: zwmRaw.cxSepEmUso,
+          recFaltas: zwmRaw.recFaltas,
+          separacao: zwmRaw.separacao,
+          conferencia: zwmRaw.conferencia,
+          postoEmbalagem: zwmRaw.postoEmbalagem,
+          expedicao: zwmRaw.expedicao || 0,
+        } : undefined,
+        salesCuts: {
+          vendas,
+          cortes,
+          percentCorte
+        }
+      };
+    });
+
+    // 2. Merge uploaded Firestore data on top of baseline
+    Object.keys(dbRoutes).forEach((subRouteId) => {
+      const dbItem = dbRoutes[subRouteId];
+      if (!dbItem) return;
+
+      const baseline = merged[subRouteId];
+      if (baseline) {
+        // Merge ZWM data if present in db, otherwise keep baseline
+        const zwmData = dbItem.zwm ? { ...dbItem.zwm } : baseline.zwm;
+        // Merge salesCuts if present in db, otherwise keep baseline
+        const salesCutsData = dbItem.salesCuts ? { ...dbItem.salesCuts } : baseline.salesCuts;
+
+        merged[subRouteId] = {
+          rota: subRouteId,
+          zwm: zwmData,
+          salesCuts: salesCutsData
         };
-      });
-      return fallback;
-    }
+      } else {
+        // Entirely new route from Firestore
+        merged[subRouteId] = dbItem;
+      }
+    });
 
-    return dbRoutes;
+    return merged;
   }, [dbRoutes]);
 
   const allRoutes = useMemo(() => {
@@ -189,13 +208,13 @@ export function useRouteFlowData() {
         await batch.commit();
       }
 
-      const batch = writeBatch(db);
+      let batch = writeBatch(db);
       
       // We can upload in batches of 500
       let count = 0;
       
       for (const record of records) {
-        const rotaStr = String(record.rota || record.Rota || '').trim();
+        const rotaStr = String(record.rota || record.Rota || '').trim().toUpperCase().replace(/^ROTA\s*/i, '');
         if (!rotaStr) continue;
 
         const docRef = doc(db, pathRef, rotaStr);
@@ -232,6 +251,7 @@ export function useRouteFlowData() {
 
         if (count >= 400) {
           await batch.commit();
+          batch = writeBatch(db);
           count = 0;
         }
       }

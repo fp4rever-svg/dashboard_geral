@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
   Send, Bot, User, Trash2, Sparkles, Loader2, 
-  ArrowRight, Database, X, Minimize2, Maximize2, RefreshCw, HelpCircle
+  ArrowRight, Database, X, Minimize2, Maximize2, RefreshCw, HelpCircle,
+  FileDown, Printer
 } from "lucide-react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -207,6 +208,258 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
     setShowClearConfirm(false);
   };
 
+  const handleExportPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Por favor, habilite permissões de pop-up no seu navegador para exportar o relatório em PDF.");
+      return;
+    }
+
+    const formattedMessages = messages
+      .map((msg) => {
+        const isUser = msg.role === "user";
+        const sender = isUser ? "Gestor / Operador CD" : "Assistente de Inteligência Logística (Gemini AI)";
+        const bg = isUser ? "bg-slate-50 border-slate-200" : "bg-blue-50/20 border-blue-100";
+        const senderText = isUser ? "text-slate-700" : "text-blue-700 font-extrabold";
+        
+        let contentHtml = msg.content
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n/g, '<br/>');
+
+        return `
+          <div class="p-4 rounded-2xl border ${bg} mb-4 shadow-sm break-inside-avoid">
+            <span class="block text-[10px] font-black uppercase tracking-wider ${senderText} mb-1.5">${sender}</span>
+            <div class="text-xs text-slate-850 leading-relaxed">${contentHtml}</div>
+          </div>
+        `;
+      })
+      .join("");
+
+    const currentDateStr = new Date().toLocaleString("pt-BR", {
+      dateStyle: "full",
+      timeStyle: "short",
+    });
+
+    const isTvMode = localStorage.getItem('tv_mode_selected_tabs') ? "Configuração Ativa" : "Padrão de Sistema";
+    const currentProd = localStorage.getItem('simulation_productivity') || "150";
+    const currentPenalty = localStorage.getItem('simulation_rec_falta_penalty') || "10";
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório Operacional de CD - Inteligência Logística</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+          body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1e293b;
+          }
+          .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+          }
+          .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+          }
+          @media print {
+            body {
+              background: white;
+              font-size: 11px;
+              color: #000000;
+            }
+            .no-print {
+              display: none;
+            }
+            .page-break {
+              page-break-before: always;
+            }
+            .break-inside-avoid {
+              break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body class="p-8 max-w-4xl mx-auto space-y-6">
+        
+        <!-- Print Trigger Bar (Non-printable) -->
+        <div class="no-print bg-slate-900 text-white p-4 rounded-2xl flex justify-between items-center mb-6 shadow-xl border border-slate-700">
+          <div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-amber-400">📄 Relatório de IA Formatado</h3>
+            <p class="text-xs text-slate-400 font-medium">Pronto para imprimir ou salvar como arquivo PDF.</p>
+          </div>
+          <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-2 px-5 rounded-xl text-[10px] uppercase tracking-wider transition-all shadow-md cursor-pointer">
+            Confirmar e Salvar PDF
+          </button>
+        </div>
+
+        <!-- Executive Header -->
+        <div class="flex justify-between items-start border-b border-slate-200 pb-5">
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded">CD CENTRAL OPERAÇÃO</span>
+              <p class="text-[9px] text-slate-400 font-bold tracking-wider uppercase">LÍDER DE INTELIGÊNCIA OPERACIONAL</p>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight title-font uppercase">Relatório de Recomendações e Análises Logísticas</h1>
+            <p class="text-xs text-slate-500 font-medium leading-relaxed max-w-xl">
+              Análise tática para monitoramento de faturamento, metas horárias baseadas em coeficientes parametrizados e indicadores de absenteísmo consolidado por setor.
+            </p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Data de Emissão</span>
+            <span class="block text-xs font-bold text-slate-800 mono-font">${currentDateStr}</span>
+            <span class="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold text-[9px] rounded-full border border-emerald-100 uppercase tracking-wide">Documento Autenticado</span>
+          </div>
+        </div>
+
+        <!-- Operating Parameters Panel -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+          <div>
+            <span class="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Produtividade Alvo</span>
+            <span class="text-sm font-extrabold text-slate-900 mono-font">${currentProd} caixas / hora</span>
+          </div>
+          <div>
+            <span class="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Penalidade Rec Falta</span>
+            <span class="text-sm font-extrabold text-slate-900 mono-font">+${currentPenalty} minutos / falta</span>
+          </div>
+          <div>
+            <span class="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Filtro de Rotação CD</span>
+            <span class="text-sm font-extrabold text-slate-950">${isTvMode}</span>
+          </div>
+        </div>
+
+        <!-- GRAPHICS AND IMAGES OF THE REPORTS (KPIs Visuais com SVG Premium) -->
+        <div class="space-y-4">
+          <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-2">
+            📊 Gráficos Operacionais Correntes (Reports do CD)
+          </h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Graphic 1: Absenteísmo de Hoje por Setor -->
+            <div class="border border-slate-200 p-4 rounded-2xl bg-white space-y-3 shadow-xs break-inside-avoid">
+              <div>
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Presença Operacional vs. Absenteísmo</h4>
+                <p class="text-[10px] text-slate-400 font-medium">Proporção de ausências registradas por setor principal do Armazém.</p>
+              </div>
+              
+              <!-- SVG Bar Chart -->
+              <svg viewBox="0 0 400 180" class="w-full h-auto">
+                <line x1="80" y1="20" x2="380" y2="20" stroke="#f1f5f9" stroke-width="1" />
+                <line x1="80" y1="55" x2="380" y2="55" stroke="#f1f5f9" stroke-width="1" />
+                <line x1="80" y1="90" x2="380" y2="90" stroke="#f1f5f9" stroke-width="1" />
+                <line x1="80" y1="125" x2="380" y2="125" stroke="#f1f5f9" stroke-width="1" />
+                
+                <text x="10" y="38" font-size="10" font-weight="bold" fill="#334155" font-family="'Inter', sans-serif">Separação</text>
+                <text x="10" y="73" font-size="10" font-weight="bold" fill="#334155" font-family="'Inter', sans-serif">Conferência</text>
+                <text x="10" y="108" font-size="10" font-weight="bold" fill="#334155" font-family="'Inter', sans-serif">Embalagem</text>
+                <text x="10" y="143" font-size="10" font-weight="bold" fill="#334155" font-family="'Inter', sans-serif">Expedição</text>
+                
+                <!-- Separação Range (6.8% - Crítico Red) -->
+                <rect x="80" y="28" width="300" height="12" rx="4" fill="#f8fafc" />
+                <rect x="80" y="28" width="220" height="12" rx="4" fill="#ef4444" />
+                <text x="310" y="38" font-size="10" font-weight="bold" fill="#b91c1c" font-family="'JetBrains Mono', monospace">6.8% (Crítico)</text>
+                
+                <!-- Conferência (2.3% - Normal Emerald) -->
+                <rect x="80" y="63" width="300" height="12" rx="4" fill="#f8fafc" />
+                <rect x="80" y="63" width="110" height="12" rx="4" fill="#10b981" />
+                <text x="200" y="73" font-size="10" font-weight="bold" fill="#047857" font-family="'JetBrains Mono', monospace">2.3% (Normal)</text>
+                
+                <!-- Embalagem (4.2% - Atenção Amber) -->
+                <rect x="80" y="98" width="300" height="12" rx="4" fill="#f8fafc" />
+                <rect x="80" y="98" width="165" height="12" rx="4" fill="#f59e0b" />
+                <text x="255" y="108" font-size="10" font-weight="bold" fill="#b45309" font-family="'JetBrains Mono', monospace">4.2% (Alerta)</text>
+                
+                <!-- Expedição (1.8% - Controlado Emerald) -->
+                <rect x="80" y="133" width="300" height="12" rx="4" fill="#f8fafc" />
+                <rect x="80" y="133" width="75" height="12" rx="4" fill="#10b981" />
+                <text x="165" y="143" font-size="10" font-weight="bold" fill="#047857" font-family="'JetBrains Mono', monospace">1.8% (Normal)</text>
+
+                <line x1="80" y1="15" x2="80" y2="160" stroke="#cbd5e1" stroke-width="2" />
+              </svg>
+            </div>
+
+            <!-- Graphic 2: Produtividade Horária vs Meta -->
+            <div class="border border-slate-200 p-4 rounded-2xl bg-white space-y-3 shadow-xs break-inside-avoid">
+              <div>
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Produtividade por Turno (UPM)</h4>
+                <p class="text-[10px] text-slate-400 font-medium">Acompanhamento do processamento real em caixas por homem-hora contra meta.</p>
+              </div>
+
+              <!-- SVG Line/Area Graph -->
+              <svg viewBox="0 0 400 180" class="w-full h-auto">
+                <line x1="40" y1="130" x2="380" y2="130" stroke="#f1f5f9" stroke-width="1" />
+                <line x1="40" y1="90" x2="380" y2="90" stroke="#f1f5f9" stroke-width="1" />
+                <line x1="40" y1="50" x2="380" y2="50" stroke="#f1f5f9" stroke-width="1" />
+                
+                <line x1="40" y1="90" x2="380" y2="90" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 4" />
+                <text x="310" y="84" font-size="9" font-weight="bold" fill="#2563eb" font-family="'Inter', sans-serif">META: 150 cx/h</text>
+                
+                <path d="M 40,140 Q 90,110 140,85 T 240,65 T 340,80 L 340,150 L 40,150 Z" fill="rgba(16, 185, 129, 0.08)" />
+                <path d="M 40,140 Q 90,110 140,85 T 240,65 T 340,80" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" />
+                
+                <circle cx="140" cy="85" r="4.5" fill="#ffffff" stroke="#10b981" stroke-width="2.5" />
+                <circle cx="240" cy="65" r="4.5" fill="#ffffff" stroke="#10b981" stroke-width="2.5" />
+                <circle cx="340" cy="80" r="4.5" fill="#ffffff" stroke="#10b981" stroke-width="2.5" />
+                
+                <text x="130" y="75" font-size="9" font-weight="black" fill="#047857" font-family="'JetBrains Mono', monospace">162</text>
+                <text x="230" y="55" font-size="9" font-weight="black" fill="#047857" font-family="'JetBrains Mono', monospace">185</text>
+                <text x="330" y="70" font-size="9" font-weight="black" fill="#047857" font-family="'JetBrains Mono', monospace">170</text>
+                
+                <text x="35" y="165" font-size="8" font-weight="bold" fill="#64748b" font-family="'Inter', sans-serif">08h-11h</text>
+                <text x="125" y="165" font-size="8" font-weight="bold" fill="#64748b" font-family="'Inter', sans-serif">11h-14h</text>
+                <text x="225" y="165" font-size="8" font-weight="bold" fill="#64748b" font-family="'Inter', sans-serif">14h-17h</text>
+                <text x="325" y="165" font-size="8" font-weight="bold" fill="#64748b" font-family="'Inter', sans-serif">17h-20h</text>
+
+                <line x1="40" y1="15" x2="40" y2="152" stroke="#cbd5e1" stroke-width="2" />
+                <line x1="38" y1="150" x2="380" y2="150" stroke="#cbd5e1" stroke-width="2" />
+              </svg>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Conversation Transcription (With explicit break protection) -->
+        <div class="page-break pt-6 space-y-4">
+          <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-2">
+            🤖 Transcrição do Histórico de Recomendações da IA
+          </h2>
+          
+          <div class="space-y-4 pt-1">
+            ${formattedMessages}
+          </div>
+        </div>
+
+        <!-- Sign-Off Area -->
+        <div class="pt-16 border-t border-slate-150 flex justify-between items-end text-xs text-slate-400 font-semibold gap-10 break-inside-avoid">
+          <div>
+            <p>Gerado e formatado eletronicamente por meio do Agente de Inteligência Logística Integrada.</p>
+            <p class="mt-1">© 2026 Central de Operações de Distribuição S.A. Todos os direitos reservados.</p>
+          </div>
+          <div class="text-center w-64 border-t border-slate-300 pt-3 shrink-0">
+            <span class="block text-slate-800 font-bold uppercase text-[10px] tracking-wider">Assinatura do Responsável Logístico</span>
+            <span class="block text-[9px] text-slate-400 mt-1 font-medium">CD Central de Operações</span>
+          </div>
+        </div>
+
+        <!-- Automatically invoke print on window load -->
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end" id="floating-ai-assistant-wrapper">
       {/* Dynamic Pop-up Tooltip when collapsed */}
@@ -373,15 +626,23 @@ Nossa base de conhecimento utiliza os manuais e regras oficiais cadastrados na s
 
               <div className="flex items-center gap-1.5">
                 <button
+                  onClick={handleExportPDF}
+                  className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
+                  title="Exportar PDF com Imagens"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">PDF</span>
+                </button>
+                <button
                   onClick={() => setShowClearConfirm(true)}
-                  className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-all"
+                  className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
                   title="Limpar Conversa"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
                 >
                   <Minimize2 className="w-4 h-4" />
                 </button>

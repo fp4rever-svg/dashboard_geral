@@ -25,6 +25,7 @@ export function AdminRouteStatsImporter() {
   const [activeTab, setActiveTab] = useState<TableOption>('zwm');
   const [pastedData, setPastedData] = useState<string>('');
   const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge');
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   // Status reporting
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string | null }>({
@@ -70,13 +71,11 @@ export function AdminRouteStatsImporter() {
     const rotaKey = Object.keys(raw).find(k => /rota|route|id/i.test(k));
     const rawRoute = rotaKey ? raw[rotaKey] : Object.values(raw)[0];
     
-    if (!rawRoute || typeof rawRoute !== 'string') return null;
+    if (rawRoute === undefined || rawRoute === null || rawRoute === '') return null;
     
-    // Normalize format: "ROTA 101" or standard format
-    let normalizedRoute = rawRoute.trim().toUpperCase();
-    if (/^\d+$/.test(normalizedRoute)) {
-      normalizedRoute = `ROTA ${normalizedRoute}`;
-    }
+    // Normalize format: clean and strip any prefix like ROTA so routes like ROTA 700 and 700 become 700
+    let normalizedRoute = rawRoute.toString().trim().toUpperCase().replace(/^ROTA\s*/i, '');
+    if (!normalizedRoute) return null;
 
     const getNum = (regexArr: RegExp[], defaultVal = 0) => {
       const key = Object.keys(raw).find(k => regexArr.some(r => r.test(k)));
@@ -182,6 +181,7 @@ export function AdminRouteStatsImporter() {
       return;
     }
 
+    setIsProcessing(true);
     try {
       setStatus({ type: null, message: null });
       
@@ -198,11 +198,14 @@ export function AdminRouteStatsImporter() {
         type: 'error',
         message: `Falha na gravação do Firebase: ${err.message}`
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   // Restore defaults
   const handleReset = async () => {
+    setIsProcessing(true);
     try {
       await resetToMockData();
       setIsConfirmingReset(false);
@@ -215,6 +218,8 @@ export function AdminRouteStatsImporter() {
         type: 'error',
         message: `Erro ao restaurar dados: ${err.message}`
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -281,10 +286,10 @@ export function AdminRouteStatsImporter() {
               </button>
               <button
                 onClick={handleReset}
-                disabled={loading}
+                disabled={isProcessing}
                 className="px-3.5 py-1.5 bg-red-655 text-white hover:bg-red-700 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer flex items-center gap-1 isDisabled"
               >
-                {loading ? 'Restaurando...' : 'Confirmar Restauração'}
+                {isProcessing ? 'Restaurando...' : 'Confirmar Restauração'}
               </button>
             </div>
           </motion.div>
@@ -426,15 +431,15 @@ export function AdminRouteStatsImporter() {
               Analisar Dados
             </button>
             
-            <button
+             <button
               onClick={handleExecuteImport}
-              disabled={loading || previewRows.length === 0}
+              disabled={isProcessing || previewRows.length === 0}
               className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex-1 flex items-center justify-center gap-1.5 border border-transparent cursor-pointer shadow-md text-white bg-indigo-600 hover:bg-indigo-700 ${
-                (loading || previewRows.length === 0) ? 'opacity-60 cursor-not-allowed' : ''
+                (isProcessing || previewRows.length === 0) ? 'opacity-60 cursor-not-allowed' : ''
               }`}
             >
               <Check className="w-4 h-4" />
-              {loading ? 'Processando Carga...' : 'Confirmar e Gravar'}
+              {isProcessing ? 'Processando Carga...' : 'Confirmar e Gravar'}
             </button>
           </div>
 

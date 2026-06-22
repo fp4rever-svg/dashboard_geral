@@ -15,7 +15,9 @@ import { AbsenteeismManagement } from './components/admin/AbsenteeismManagement'
 import { AdminSettingsView } from './components/admin/AdminSettingsView';
 import { ProductivityReportView } from './components/admin/ProductivityReportView';
 import { AIBaseManagementView } from './components/admin/AIBaseManagementView';
+import { AdminRouteStatsImporter } from './components/admin/AdminRouteStatsImporter';
 import { RouteFlowAndSalesDashboard } from './components/logistics/RouteFlowAndSalesDashboard';
+import { RouteDepartureProjectionView } from './components/logistics/RouteDepartureProjectionView';
 import FloatingAIAssistant from './components/views/FloatingAIAssistant';
 import { Package, Clock, Box, LayoutGrid, Lock, LogOut, User as UserIcon, LineChart, Users, Maximize, Minimize2, Tv } from 'lucide-react';
 import { collection, doc, writeBatch } from 'firebase/firestore';
@@ -71,7 +73,7 @@ export default function App() {
     } catch (e) {
       console.error(e);
     }
-    return ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos'];
+    return ['log_analytics', 'painel', 'route_dashboard', 'simulacao_saidas', 'saude', 'productivity_ops', 'avisos'];
   });
 
   // Escutar atualizações de localStorage para sincronizar mudanças nas configurações
@@ -87,7 +89,7 @@ export default function App() {
         if (savedTabs) {
           setTvModeSelectedTabs(JSON.parse(savedTabs));
         } else {
-          setTvModeSelectedTabs(['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos']);
+          setTvModeSelectedTabs(['log_analytics', 'painel', 'route_dashboard', 'simulacao_saidas', 'saude', 'productivity_ops', 'avisos']);
         }
       } catch (e) {
         console.error(e);
@@ -114,7 +116,7 @@ export default function App() {
     // Se nenhuma aba tiver marcada, rotacionamos todas por padrão para evitar loop vazio
     const rotatableTabs = tvModeSelectedTabs.length > 0 
       ? tvModeSelectedTabs 
-      : ['log_analytics', 'painel', 'route_dashboard', 'saude', 'productivity_ops', 'avisos'];
+      : ['log_analytics', 'painel', 'route_dashboard', 'simulacao_saidas', 'saude', 'productivity_ops', 'avisos'];
     
     // Se estiver em uma aba que não faz parte das abas rotacionáveis de Operações,
     // redefine imediatamente para a primeira aba da lista útil.
@@ -231,7 +233,7 @@ export default function App() {
     );
   }
 
-  const publicTabs = ['log_analytics', 'route_dashboard', 'painel', 'saude', 'avisos', 'productivity_ops'];
+  const publicTabs = ['log_analytics', 'route_dashboard', 'simulacao_saidas', 'painel', 'saude', 'avisos', 'productivity_ops'];
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden relative">
@@ -272,14 +274,18 @@ export default function App() {
                   {activeTab === 'configuracoes' && 'Configurações Globais'}
                   {activeTab === 'ai_chat' && 'Assistente de IA & Inteligência Coletiva'}
                   {activeTab === 'ai_admin' && 'Base de Conhecimento (IA)'}
+                  {activeTab === 'gestao_faltas' && 'Gestão de Faltas'}
+                  {activeTab === 'simulacao_saidas' && 'Simulação e Projeção de Partidas'}
                 </h1>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'painel' && 'Monitoramento em Tempo Real de Volume.'}
                   {activeTab === 'route_dashboard' && 'Rastreamento de caixas em circulação real (ZWM) conjugado ao volume de vendas e cortes físicos.'}
+                  {activeTab === 'simulacao_saidas' && 'Modelagem de produtividade de separação e penalidades para projetar partidas de rotas.'}
                   {activeTab === 'saude' && 'Monitoramento de indicators críticos e absenteísmo.'}
                   {activeTab === 'avisos' && 'Atualizações e alertas da equipe operacional.'}
                   {activeTab === 'log_analytics' && 'Visão geral das operações de transporte e retenção.'}
                   {activeTab === 'configuracoes' && 'Gerencie canais de push e de alertas sonoros desta estação de controle.'}
+                  {activeTab === 'gestao_faltas' && 'Carregue arquivos de circulação (ZWM), vendas e cortes para atualizar o controle de rotas.'}
                   {activeTab === 'relatorios' && 'Carga de relatórios (Excel/CSV) e visualização de tabelas dinâmicas da operação.'}
                   {activeTab === 'productivity_ops' && 'Visão operacional de cumprimento de metas de produtividade, volumetria horária e rankings.'}
                   {activeTab === 'ai_chat' && 'Esclareça dúvidas sobre metas por hora, regras de layout e procedimentos com inteligência artificial.'}
@@ -336,6 +342,10 @@ export default function App() {
               <AbsenteeismManagement />
             )}
 
+            {activeTab === 'gestao_faltas' && isAdmin && (
+              <AdminRouteStatsImporter />
+            )}
+
             {activeTab === 'saude' && (
                <LogisticsDashboardView 
                  forcedView="health"
@@ -389,6 +399,10 @@ export default function App() {
 
             {activeTab === 'route_dashboard' && (
               <RouteFlowAndSalesDashboard />
+            )}
+
+            {activeTab === 'simulacao_saidas' && (
+              <RouteDepartureProjectionView />
             )}
             
             {!isAdmin && !publicTabs.includes(activeTab) && (
